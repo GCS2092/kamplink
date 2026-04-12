@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="kamplink – L'application qui connecte les étudiants sénégalais à leurs opportunités : annonces filière, stages, bourses et documents en un seul endroit."/>
+  <meta name="theme-color" content="#0a0f1e"/>
+  <meta property="og:title" content="kamplink – Connecte ton parcours étudiant"/>
+  <meta property="og:description" content="Annonces filière, stages, bourses et documents. Tout en un."/>
+  <meta property="og:type" content="website"/>
+  <title>kamplink – Connecte ton parcours étudiant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- ══ NOISE OVERLAY ══ -->
+  <div class="noise"></div>
+
+  <!-- ══ CURSOR ══ -->
+  <div class="cursor" id="cursor"></div>
+  <div class="cursor-follower" id="cursor-follower"></div>
+
+  <!-- ══════════════════════════════════════
+       NAVIGATION
+  ══════════════════════════════════════ -->
+  <nav class="nav" id="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo">
+        <span class="logo-mark">C</span>
+        kamplink<em>Link</em>
+      </a>
+      <ul class="nav-links" id="nav-links">
+        <li><a href="#features" class="nav-link">Fonctionnalités</a></li>
+        <li><a href="#how" class="nav-link">Comment ça marche</a></li>
+        <li><a href="#waitlist" class="nav-link">Bêta</a></li>
+      </ul>
+      <a href="#waitlist" class="btn-cta nav-cta">Rejoindre la bêta <span class="arrow">→</span></a>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════
+       HERO
+  ══════════════════════════════════════ -->
+  <section class="hero" id="hero">
+    <div class="hero-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+      <div class="grid-lines"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-left">
+        <div class="hero-eyebrow" data-aos="fade-up">
+          <span class="dot-green"></span>
+          Fait pour les étudiants sénégalais
+        </div>
+
+        <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+          Ton kamplink.<br/>
+          Tes opportunités.<br/>
+          <span class="gradient-text">Tout en un.</span>
+        </h1>
+
+        <p class="hero-sub" data-aos="fade-up" data-aos-delay="200">
+          Annonces filière, stages, bourses et documents réunis dans une app conçue pour les étudiants de Dakar à Ziguinchor.
+        </p>
+
+        <div class="hero-actions" data-aos="fade-up" data-aos-delay="300">
+          <a href="#waitlist" class="btn-cta btn-large">
+            Rejoindre la liste d'attente
+            <span class="btn-shine"></span>
+          </a>
+          <a href="#features" class="btn-ghost">
+            Découvrir les features <span>↓</span>
+          </a>
+        </div>
+
+        <div class="hero-stats" data-aos="fade-up" data-aos-delay="400">
+          <div class="stat">
+            <strong>500+</strong>
+            <span>Inscrits en attente</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <strong>6</strong>
+            <span>Universités ciblées</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <strong>2026</strong>
+            <span>Lancement prévu</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right" data-aos="fade-left" data-aos-delay="200">
+        <div class="phone-scene">
+          <div class="phone-glow"></div>
+          <div class="phone">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+
+              <!-- App Header -->
+              <div class="app-topbar">
+                <div class="app-logo-row">
+                  <span class="app-brand">kamplink</span>
+                  <div class="app-avatar">AD</div>
+                </div>
+                <div class="app-verified">
+                  <span class="check-icon">✓</span>
+                  Profil vérifié · L2 Informatique
+                </div>
+              </div>
+
+              <!-- Annonces -->
+              <div class="app-section-label">Annonces de ta filière</div>
+              <div class="app-card app-card--urgent">
+                <div class="app-card-tag tag-urgent">URGENT</div>
+                <div class="app-card-text">Examen partiel décalé au 15 nov.</div>
+                <div class="app-card-meta">Info Sciences Dakar · il y a 2h</div>
+              </div>
+
+              <!-- Opportunités -->
+              <div class="app-section-label">Nouvelles opportunités</div>
+              <div class="app-card app-card--stage">
+                <div class="app-card-tag tag-stage">STAGE</div>
+                <div class="app-card-text">Dev mobile · Orange Sénégal</div>
+                <div class="app-card-meta">Niveau L3 · Dakar · Expire 30 nov</div>
+              </div>
+              <div class="app-card app-card--bourse">
+                <div class="app-card-tag tag-bourse">BOURSE</div>
+                <div class="app-card-text">Mastercard Foundation 2025</div>
+                <div class="app-card-meta">Tout niveau · International</div>
+              </div>
+
+              <!-- Docs -->
+              <div class="app-section-label">Documents récents</div>
+              <div class="app-docs">
+                <div class="app-doc">📄 Algo CM5.pdf</div>
+                <div class="app-doc">📄 BD résumé.pdf</div>
+              </div>
+
+              <!-- Bottom Nav -->
+              <div class="app-bottomnav">
+                <div class="app-nav-item active">🏠<span>Accueil</span></div>
+                <div class="app-nav-item">🏫<span>Commune</span></div>
+                <div class="app-nav-item">🎯<span>Opportunités</span></div>
+                <div class="app-nav-item">🛒<span>Market</span></div>
+                <div class="app-nav-item">👤<span>Profil</span></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Floating badges -->
+          <div class="float-badge badge-1" data-aos="fade-right" data-aos-delay="600">
+            <span>🎓</span> Bourse disponible
+          </div>
+          <div class="float-badge badge-2" data-aos="fade-left" data-aos-delay="700">
+            <span>✅</span> Profil vérifié
+          </div>
+          <div class="float-badge badge-3" data-aos="fade-right" data-aos-delay="800">
+            <span>📢</span> 3 nouvelles annonces
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-indicator">
+      <div class="scroll-line"></div>
+      <span>Défiler</span>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       FEATURES
+  ══════════════════════════════════════ -->
+  <section class="features" id="features">
+    <div class="section-inner">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Fonctionnalités</span>
+        <h2 class="section-title">Tout ce dont tu as besoin,<br/><em>enfin réuni.</em></h2>
+        <p class="section-sub">Une seule app pour ne plus rien rater de ton parcours universitaire.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feat-card feat-card--large" data-aos="fade-up">
+          <div class="feat-icon-wrap">
+            <div class="feat-icon">📢</div>
+          </div>
+          <h3>Annonces filière en temps réel</h3>
+          <p>Cours annulés, examens reportés, événements kamplink — tu es toujours informé avant tout le monde. Filtré par ta filière, ton niveau, ton université.</p>
+          <div class="feat-visual">
+            <div class="mini-notif">📌 Salle 204 → Amphi B</div>
+            <div class="mini-notif mini-notif--delay">ℹ️ Soutenance L3 le 20 nov</div>
+          </div>
+        </div>
+
+        <div class="feat-card" data-aos="fade-up" data-aos-delay="100">
+          <div class="feat-icon-wrap">
+            <div class="feat-icon">💼</div>
+          </div>
+          <h3>Stages & Jobs</h3>
+          <p>Offres triées par niveau, région et domaine. Orange, Wave, startups locales et multinationales.</p>
+        </div>
+
+        <div class="feat-card" data-aos="fade-up" data-aos-delay="150">
+          <div class="feat-icon-wrap">
+            <div class="feat-icon">🎓</div>
+          </div>
+          <h3>Bourses</h3>
+          <p>Mastercard, DAAD, kamplink France, Fulbright — toutes les bourses avec leurs deadlines en un seul fil.</p>
+        </div>
+
+        <div class="feat-card feat-card--dark" data-aos="fade-up" data-aos-delay="200">
+          <div class="feat-icon-wrap">
+            <div class="feat-icon">📁</div>
+          </div>
+          <h3>Documents rapides</h3>
+          <p>Tes cours, résumés et fiches à portée de main. Upload, partage et retrouve-les en 2 secondes.</p>
+        </div>
+
+        <div class="feat-card feat-card--accent" data-aos="fade-up" data-aos-delay="250">
+          <div class="feat-icon-wrap">
+            <div class="feat-icon">✅</div>
+          </div>
+          <h3>Badge étudiant vérifié</h3>
+          <p>Ton identité étudiante vérifiée = accès aux contenus exclusifs de ta filière et aux opportunités premium.</p>
+        </div>
+
+        <div class="feat-card feat-card--large feat-card--community" data-aos="fade-up" data-aos-delay="300">
+          <div class="feat-icon-wrap">
+            <div class="feat-icon">🌍</div>
+          </div>
+          <h3>Communauté étudiante</h3>
+          <p>Rejoins les groupes de ta filière, échange avec des alumni, partage tes ressources et construis ton réseau professionnel dès maintenant.</p>
+          <div class="community-avatars">
+            <div class="ca">A</div><div class="ca">M</div><div class="ca">F</div>
+            <div class="ca">S</div><div class="ca ca--more">+48</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       HOW IT WORKS
+  ══════════════════════════════════════ -->
+  <section class="how" id="how">
+    <div class="how-bg">
+      <div class="orb orb-4"></div>
+    </div>
+    <div class="section-inner">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Simple &amp; Rapide</span>
+        <h2 class="section-title">En 3 étapes,<br/><em>tu es connecté.</em></h2>
+      </div>
+
+      <div class="steps-container">
+        <div class="steps-line"></div>
+        <div class="step" data-aos="fade-up" data-aos-delay="0">
+          <div class="step-num">01</div>
+          <div class="step-body">
+            <h3>Crée ton compte</h3>
+            <p>Inscris-toi avec ton email universitaire ou personnel. 30 secondes suffisent.</p>
+          </div>
+          <div class="step-icon-big">✉️</div>
+        </div>
+        <div class="step" data-aos="fade-up" data-aos-delay="150">
+          <div class="step-num">02</div>
+          <div class="step-body">
+            <h3>Vérifie ton profil</h3>
+            <p>Upload ta carte étudiante. Notre équipe valide en moins de 24h et tu reçois ton badge.</p>
+          </div>
+          <div class="step-icon-big">🪪</div>
+        </div>
+        <div class="step" data-aos="fade-up" data-aos-delay="300">
+          <div class="step-num">03</div>
+          <div class="step-body">
+            <h3>Explore &amp; profite</h3>
+            <p>Accède à toutes les annonces, opportunités et documents de ta filière en temps réel.</p>
+          </div>
+          <div class="step-icon-big">🚀</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       TESTIMONIALS / SOCIAL PROOF
+  ══════════════════════════════════════ -->
+  <section class="testimonials">
+    <div class="section-inner">
+      <div class="section-header" data-aos="fade-up">
+        <span class="section-tag">Ils nous font confiance</span>
+        <h2 class="section-title">La communauté parle.</h2>
+      </div>
+      <div class="testi-grid">
+        <div class="testi-card" data-aos="fade-up" data-aos-delay="0">
+          <div class="testi-quote">"</div>
+          <p>J'ai manqué tellement de bourses faute d'information. kamplink règle exactement ce problème.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">AM</div>
+            <div>
+              <strong>Aminata M.</strong>
+              <span>L3 Gestion · UCAD</span>
+            </div>
+          </div>
+        </div>
+        <div class="testi-card testi-card--featured" data-aos="fade-up" data-aos-delay="100">
+          <div class="testi-quote">"</div>
+          <p>Enfin une appli qui comprend vraiment les besoins des étudiants sénégalais. Hâte que ça sorte !</p>
+          <div class="testi-author">
+            <div class="testi-avatar">MD</div>
+            <div>
+              <strong>Moussa D.</strong>
+              <span>M1 Informatique · UGB</span>
+            </div>
+          </div>
+        </div>
+        <div class="testi-card" data-aos="fade-up" data-aos-delay="200">
+          <div class="testi-quote">"</div>
+          <p>Les annonces de ma filière arrivent toujours en retard sur WhatsApp. kamplink va changer ça.</p>
+          <div class="testi-author">
+            <div class="testi-avatar">FN</div>
+            <div>
+              <strong>Fatou N.</strong>
+              <span>L2 Droit · UZG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       WAITLIST
+  ══════════════════════════════════════ -->
+  <section class="waitlist" id="waitlist">
+    <div class="waitlist-bg">
+      <div class="orb orb-5"></div>
+      <div class="orb orb-6"></div>
+    </div>
+    <div class="section-inner">
+      <div class="waitlist-inner">
+        <div class="waitlist-left" data-aos="fade-right">
+          <span class="section-tag">Accès anticipé</span>
+          <h2 class="section-title">Sois parmi<br/><em>les premiers.</em></h2>
+          <p>L'application est en cours de développement. Inscris-toi maintenant pour être notifié au lancement et obtenir un accès bêta exclusif.</p>
+          <div class="waitlist-perks">
+            <div class="perk"><span>✓</span> Accès bêta en avant-première</div>
+            <div class="perk"><span>✓</span> Aucune publicité pendant 6 mois</div>
+            <div class="perk"><span>✓</span> Badge "Founding Member" exclusif</div>
+          </div>
+        </div>
+
+        <div class="waitlist-right" data-aos="fade-left">
+          <div class="waitlist-form-card">
+            <h3>Rejoins la liste d'attente</h3>
+            <p class="form-desc">Gratuit. Aucun engagement. Juste une notification au lancement.</p>
+
+            <form id="waitlist-form" novalidate>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fname">Prénom</label>
+                  <input type="text" id="fname" name="fname" placeholder="Aminata" required autocomplete="given-name"/>
+                  <span class="input-error" id="fname-error"></span>
+                </div>
+                <div class="form-group">
+                  <label for="lname">Nom</label>
+                  <input type="text" id="lname" name="lname" placeholder="Diallo" required autocomplete="family-name"/>
+                  <span class="input-error" id="lname-error"></span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="aminata@ucad.edu.sn" required autocomplete="email"/>
+                <span class="input-error" id="email-error"></span>
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Téléphone (optionnel)</label>
+                <input type="tel" id="phone" name="phone" placeholder="+221 77 000 00 00" autocomplete="tel"/>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="university">Université</label>
+                  <div class="select-wrap">
+                    <select id="university" name="university" required>
+                      <option value="">Choisir...</option>
+                      <option value="ucad">UCAD – Dakar</option>
+                      <option value="udb">Université de Bambey</option>
+                      <option value="ugb">UGB – Saint-Louis</option>
+                      <option value="uzig">Univ. de Ziguinchor</option>
+                      <option value="uth">UTH – Thiès</option>
+                      <option value="autre">Autre</option>
+                    </select>
+                    <span class="select-arrow">▾</span>
+                  </div>
+                  <span class="input-error" id="university-error"></span>
+                </div>
+                <div class="form-group">
+                  <label for="level">Niveau</label>
+                  <div class="select-wrap">
+                    <select id="level" name="level">
+                      <option value="">Niveau...</option>
+                      <option value="L1">L1</option>
+                      <option value="L2">L2</option>
+                      <option value="L3">L3</option>
+                      <option value="M1">M1</option>
+                      <option value="M2">M2</option>
+                      <option value="PhD">Doctorat</option>
+                    </select>
+                    <span class="select-arrow">▾</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="filiere">Filière</label>
+                <input type="text" id="filiere" name="filiere" placeholder="Informatique, Droit, Médecine..."/>
+              </div>
+
+              <button type="submit" class="btn-submit" id="submit-btn">
+                <span class="btn-text">M'inscrire maintenant</span>
+                <span class="btn-loader" style="display:none;">⏳</span>
+                <span class="btn-shine"></span>
+              </button>
+
+              <p id="form-message" class="form-message" aria-live="polite"></p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════ -->
+  <footer class="footer" id="contact">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="nav-logo">
+          <span class="logo-mark">C</span>kamplink<em>Link</em>
+        </a>
+        <p>Conçu à Dakar, pour les étudiants africains.</p>
+        <div class="footer-flag">🇸🇳</div>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Produit</h4>
+          <a href="#features">Fonctionnalités</a>
+          <a href="#how">Comment ça marche</a>
+          <a href="#waitlist">Rejoindre la bêta</a>
+        </div>
+        <div class="footer-col">
+          <h4>Légal</h4>
+          <a href="privacy.html">Confidentialité</a>
+          <a href="terms.html">Conditions d'utilisation</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <a href="mailto:contact@kamplink.sn">contact@kamplink.sn</a>
+          <a href="https://twitter.com/kamplink_sn" target="_blank" rel="noopener">Twitter / X</a>
+          <a href="https://linkedin.com/company/kamplink" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 kamplink. Tous droits réservés.</span>
+      <span>Fait avec ❤️ à Dakar</span>
+    </div>
+  </footer>
+
+  <script type="module" src="firebase.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>

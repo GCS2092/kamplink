@@ -1,0 +1,8 @@
+# Ignorer les dossiers que tu ne veux pas pousser
+Diagrammes/
+Documentation/
+
+# Ignorer les fichiers système
+*.DS_Store
+*.log
+node_modules/
