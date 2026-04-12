@@ -1,0 +1,101 @@
+```mermaid
+%% CampusLink - Structure des Clés Redis (Mis à jour Avril 2025)
+%% Toutes les clés avec leurs TTL et patterns
+
+flowchart TB
+    subgraph RedisKeys["🔑 Structure des Clés Redis"]
+        direction TB
+        
+        subgraph RateLimiting["⚡ Rate Limiting (TTL court)"]
+            direction LR
+            RATE_PATTERN["Pattern: rate:{identifier}"]
+            RATE_EX1["🔹 rate:192.168.1.1\nCompteur: 45/100\nTTL: 60s"]
+            RATE_EX2["🔹 rate:192.168.1.1:abc123\nCompteur: 3/5\nTTL: 60s"]
+            
+            BLOCK_PATTERN["Pattern: block:{identifier}"]
+            BLOCK_EX1["🔒 block:192.168.1.1\nValeur: 1\nTTL: 300s (5min)"]
+            BLOCK_EX2["🔒 block:192.168.1.1:abc123\nValeur: 1\nTTL: 900s (15min)"]
+        end
+        
+        subgraph SecurityKeys["🛡️ Sécurité (TTL moyen)"]
+            direction LR
+            LOGIN_PATTERN["Pattern: login:{ip}:{userId}"]
+            LOGIN_EX1["🔐 login:192.168.1.1:abc123\nCompteur: 3/5\nTTL: 900s (15min)"]
+            
+            RESET_PATTERN["Pattern: reset:{userId}:{hash}"]
+            RESET_EX1["🔄 reset:abc123:$2b$10$...\nValeur: token_hash\nTTL: 600s (10min)"]
+            
+            OTP_PATTERN["Pattern: otp:{phone}"]
+            OTP_EX1["📱 otp:+221771234567\nCode: 123456\nTTL: 300s (5min)"]
+        end
+        
+        subgraph CacheKeys["💾 Cache (TTL variable)"]
+            direction LR
+            USER_PATTERN["Pattern: cache:user:{userId}"]
+            USER_EX1["👤 cache:user:abc123\nProfil JSON\nTTL: 60s\nTaille: ~2KB"]
+            
+            CANAL_PATTERN["Pattern: cache:canal:{canalId}"]
+            CANAL_EX1["💬 cache:canal:xyz789\nMétadonnées\nTTL: 30s\nTaille: ~1KB"]
+            
+            ESPACE_PATTERN["Pattern: cache:espace:{espaceId}"]
+            ESPACE_EX1["🏛️ cache:espace:def456\nInfos espace\nTTL: 120s\nTaille: ~1.5KB"]
+        end
+        
+        subgraph SessionKeys["📱 Sessions (TTL long)"]
+            direction LR
+            SESSION_PATTERN["Pattern: session:{sessionId}"]
+            SESSION_EX1["📱 session:sess_abc123\nUser data\nTTL: 3600s (1h)"]
+        end
+    end
+    
+    subgraph KeyRules["📋 Règles des Clés"]
+        direction TB
+        RULE1["✅ TTL OBLIGATOIRE sur toutes les clés"]
+        RULE2["✅ Données temporaires uniquement"]
+        RULE3["✅ Fail Open: Redis down = app fonctionne"]
+        RULE4["✅ Max 250MB total (Upstash Free Tier)"]
+        RULE5["✅ Max 10KB par entrée cache"]
+        RULE6["✅ Clés compactes (pas de données lourdes)"]
+    end
+    
+    subgraph TTLMatrix["⏰ Matrice des TTL"]
+        direction TB
+        TTL_SHORT["🔴 Court (< 1min): rate:* (60s)"]
+        TTL_MEDIUM["🟡 Moyen (1-15min): block:* (5-15min), reset:* (10min), otp:* (5min)"]
+        TTL_CACHE["🟢 Cache (30s-2min): cache:user:* (60s), cache:canal:* (30s), cache:espace:* (120s)"]
+        TTL_LONG["🔵 Long (1h+): session:* (1h)"]
+    end
+    
+    subgraph Operations["🔄 Opérations Redis"]
+        direction TB
+        OP_GET["GET {key} → Récupérer valeur"]
+        OP_SET["SET {key} {value} EX {ttl} → Stocker avec TTL"]
+        OP_INCR["INCR {key} + EXPIRE {ttl} → Incrémenter compteur"]
+        OP_DEL["DEL {key} → Supprimer clé"]
+        OP_EXISTS["EXISTS {key} → Vérifier existence"]
+        OP_TTL["TTL {key} → Temps restant"]
+        OP_KEYS["KEYS {pattern} → Rechercher clés"]
+    end
+    
+    %% Connections
+    RedisKeys --> KeyRules
+    RedisKeys --> TTLMatrix
+    RedisKeys --> Operations
+    
+    %% Styles
+    classDef rate fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px
+    classDef security fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+    classDef cache fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    classDef session fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px
+    classDef rules fill:#fff8e1,stroke:#f9a825,stroke-width:2px
+    classDef matrix fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef ops fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    
+    class RATE_EX1,RATE_EX2,BLOCK_EX1,BLOCK_EX2 rate
+    class LOGIN_EX1,RESET_EX1,OTP_EX1 security
+    class USER_EX1,CANAL_EX1,ESPACE_EX1 cache
+    class SESSION_EX1 session
+    class RULE1,RULE2,RULE3,RULE4,RULE5,RULE6 rules
+    class TTL_SHORT,TTL_MEDIUM,TTL_CACHE,TTL_LONG matrix
+    class OP_GET,OP_SET,OP_INCR,OP_DEL,OP_EXISTS,OP_TTL,OP_KEYS ops
+```

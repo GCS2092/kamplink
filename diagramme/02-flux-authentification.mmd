@@ -1,0 +1,131 @@
+```mermaid
+%% CampusLink - Flux d'Authentification (Mis à jour Avril 2025)
+%% Inclut Redis Rate Limiting + Anti-Brute Force
+
+sequenceDiagram
+    participant C as 📱 Client
+    participant FB as 🔥 Firebase Auth
+    participant API as 🚀 NestJS API
+    participant TH as ⚡ Throttler Guard
+    participant SR as 🛡️ SecurityRedis
+    participant AG as 🔐 AuthGuard
+    participant FS as 🔧 FirebaseService
+    participant PS as 🐘 PrismaService
+    participant DB as 💾 PostgreSQL
+    participant R as ⚡ Redis
+
+    Note over C,DB: 🔐 LOGIN FLOW avec Protection Redis
+
+    %% Étape 1: Authentification Firebase
+    C->>FB: 📱 Authentification (OTP/Email)
+    FB-->>C: ✅ JWT Token Firebase
+
+    %% Étape 2: Requête Login avec Rate Limiting
+    C->>API: POST /api/v1/auth/login<br/>Header: Bearer {token}
+    
+    %% Étape 3: Rate Limiting Check
+    API->>TH: Check rate limit (IP)
+    TH->>R: GET rate:{ip}
+    R-->>TH: count = 2
+    
+    alt Rate limit exceeded
+        TH->>R: SET block:{ip} 1 (300s)
+        TH-->>API: ❌ 429 Too Many Requests
+        API-->>C: { success: false, retryAfter: 300 }
+    else Rate OK
+        TH->>R: INCR rate:{ip} (TTL 60s)
+        TH-->>API: ✅ Continue
+    end
+
+    %% Étape 4: Auth Guard
+    API->>AG: Verify JWT
+    AG->>FS: verifyToken(token)
+    FS->>FB: validateToken()
+    FB-->>FS: ✅ decoded (uid, phone)
+    FS-->>AG: User decoded
+
+    %% Étape 5: Track Login Attempt (Security)
+    AG->>SR: trackLoginAttempt(ip, phone)
+    SR->>R: INCR login:{ip}:{phone} (TTL 900s)
+    R-->>SR: count = 3
+    
+    alt Too many failed attempts
+        SR->>R: SET block:{ip}:{phone} 1 (900s)
+        SR-->>AG: ❌ Account blocked
+        AG-->>API: Throw Forbidden
+        API-->>C: ❌ 403 Account temporarily locked
+    end
+
+    %% Étape 6: Database Lookup
+    AG->>PS: findUser(firebase_uid)
+    PS->>DB: SELECT * FROM utilisateurs
+    DB-->>PS: User record
+    PS-->>AG: User object
+
+    %% Étape 7: Check Banned
+    alt User banned
+        AG-->>API: ❌ User banned
+        API-->>C: ❌ 403 Account suspended
+    end
+
+    %% Étape 8: Reset failed attempts on success
+    AG->>SR: resetAttempts(ip, phone)
+    SR->>R: DEL login:{ip}:{phone}
+
+    %% Étape 9: Attach user to request
+    AG-->>API: ✅ req.user = user
+    API-->>C: ✅ 200 + Token + User data
+
+    Note over C,DB: 🔄 PASSWORD RESET FLOW
+
+    %% Password Reset Flow
+    C->>API: POST /api/v1/auth/forgot-password<br/>{ email }
+    
+    API->>TH: Check rate limit
+    TH->>R: GET rate:forgot:{email}
+    R-->>TH: count = 1
+    TH->>R: INCR rate:forgot:{email}
+    
+    API->>PS: findUserByEmail(email)
+    PS->>DB: SELECT * FROM utilisateurs
+    DB-->>PS: User found
+    
+    API->>SR: generateResetToken(userId)
+    SR->>SR: token = randomBytes(32)
+    SR->>SR: hash = bcrypt(token)
+    SR->>R: SET reset:{userId}:{hash} 1 (600s)
+    R-->>SR: OK
+    
+    Note right of SR: Token envoyé par email/SMS
+    
+    SR-->>API: ✅ Token stored
+    API-->>C: ✅ Reset link sent
+
+    %% Reset Password
+    C->>API: POST /api/v1/auth/reset-password<br/>{ token, newPassword }
+    
+    API->>SR: validateResetToken(userId, token)
+    SR->>R: KEYS reset:{userId}:*
+    R-->>SR: [reset:{userId}:abc123]
+    SR->>SR: bcrypt.compare(token, hash)
+    
+    alt Token invalid/expired
+        SR-->>API: ❌ Invalid token
+        API-->>C: ❌ 400 Token expired
+    else Token valid
+        SR->>R: DEL reset:{userId}:*
+        SR-->>API: ✅ Valid
+    end
+    
+    API->>PS: updatePassword(userId, newPassword)
+    PS->>DB: UPDATE utilisateurs SET password
+    DB-->>PS: OK
+    PS-->>API: ✅ Updated
+    
+    API-->>C: ✅ Password reset successful
+
+    Note over C,DB: 📝 LÉGENDE
+    Note over C: Client = React/Mobile
+    Note over FB: Firebase = Auth externe
+    Note over R: Redis = TTL obligatoire sur toutes les clés
+```

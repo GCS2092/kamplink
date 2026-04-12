@@ -1,0 +1,178 @@
+```mermaid
+%% CampusLink - Structure Modules NestJS (Mis à jour Avril 2025)
+
+flowchart TB
+    subgraph AppModule["🚀 AppModule (Root)"]
+        direction TB
+        
+        subgraph Global["📦 Modules Globaux"]
+            direction TB
+            FM["FirebaseModule\n(Auth externe)"]
+            PM["PrismaModule\n(Database)"]
+            RM["🔥 RedisModule\n(Cache/Sécurité)"]
+            SM["SecurityModule\n(Guards)"]
+            CM["CommonModule\n(Interceptors/Services)"]
+            QM["QueueModule\n(Bull Jobs)"]
+            SEM["SearchModule\n(Elasticsearch)"]
+        end
+        
+        subgraph Business["💼 Modules Métier"]
+            direction LR
+            
+            subgraph Auth["🔐 Auth"]
+                AM["AuthModule"]
+                AC["AuthController"]
+                AS["AuthService"]
+                AG["AuthGuard"]
+            end
+            
+            subgraph Users["👤 Users"]
+                UM["UsersModule"]
+                UC["UsersController"]
+                US["UsersService"]
+            end
+            
+            subgraph Espaces["🏛️ Espaces"]
+                EM["EspacesModule"]
+                EC["EspacesController"]
+                ES["EspacesService"]
+            end
+            
+            subgraph Canaux["💬 Canaux"]
+                CAM["CanauxModule"]
+                CC["CanauxController"]
+                CS["CanauxService"]
+            end
+            
+            subgraph Messages["📝 Messages"]
+                MM["MessagesModule"]
+                MC["MessagesController"]
+                MS["MessagesService"]
+            end
+            
+            subgraph Documents["📚 Documents"]
+                DM["DocumentsModule"]
+                DC["DocumentsController"]
+                DS["DocumentsService"]
+            end
+            
+            subgraph Opportunites["💼 Opportunités"]
+                OM["OpportunitesModule"]
+                OC["OpportunitesController"]
+                OS["OpportunitesService"]
+            end
+            
+            subgraph Notifications["🔔 Notifications"]
+                NM["NotificationsModule"]
+                NC["NotificationsController"]
+                NS["NotificationsService"]
+            end
+            
+            subgraph Signalements["🚨 Signalements"]
+                SIM["SignalementsModule"]
+                SIC["SignalementsController"]
+                SIS["SignalementsService"]
+            end
+            
+            subgraph Chat["💭 Chat"]
+                CHM["ChatModule"]
+                CHG["ChatGateway\n(WebSocket)"]
+                CHS["ChatService"]
+            end
+        end
+        
+        subgraph Monitoring["📊 Monitoring"]
+            HM["HealthModule\n(/health endpoint)"]
+        end
+    end
+
+    subgraph SharedServices["🔧 Services Partagés (Injectables)"]
+        direction TB
+        
+        subgraph RedisServices["⚡ Services Redis"]
+            RS["RedisService\n(Client Upstash)"]
+            SRS["SecurityRedisService\n(Anti-brute force)"]
+            CAS["CacheService\n(Cache léger)"]
+        end
+        
+        subgraph OtherServices["🔨 Autres Services"]
+            FS["FirebaseService\n(Verify tokens/Push)"]
+            PS["PrismaService\n(DB connection)"]
+            SAN["SanitizationService\n(DOMPurify)"]
+        end
+        
+        subgraph Interceptors["⚡ Interceptors Globaux"]
+            LI["LoggingInterceptor"]
+            RTI["ResponseTransformInterceptor"]
+        end
+        
+        subgraph Guards["🛡️ Guards"]
+            TH["RedisThrottlerGuard"]
+            IP["IpBlockerGuard"]
+        end
+        
+        subgraph Filters["🔥 Filtres"]
+            AEF["AllExceptionsFilter"]
+        end
+    end
+
+    %% Dépendances
+    AppModule --> Global
+    AppModule --> Business
+    AppModule --> Monitoring
+    
+    %% Global Module Exports
+    FM -.->|"export"| AM
+    PM -.->|"export"| All
+    RM -.->|"export"| All
+    SM -.->|"export"| Auth
+    CM -.->|"export"| All
+    
+    %% Redis Services utilisés par
+    RS -.->|"Inject"| TH
+    RS -.->|"Inject"| SRS
+    RS -.->|"Inject"| CAS
+    
+    SRS -.->|"Used by"| AS
+    CAS -.->|"Used by"| US
+    CAS -.->|"Used by"| ES
+    CAS -.->|"Used by"| CS
+    
+    %% Guards utilisés
+    TH -.->|"@UseGuards"| AC
+    AG -.->|"@UseGuards"| UC
+    AG -.->|"@UseGuards"| EC
+    AG -.->|"@UseGuards"| CC
+    AG -.->|"@UseGuards"| MC
+    
+    %% Firebase
+    FS -.->|"Verify"| AG
+    FS -.->|"Push"| NS
+    FS -.->|"Push"| CHS
+    
+    %% Prisma
+    PS -.->|"Query"| All
+    
+    %% Interceptors globaux
+    LI -.->|"Global"| AppModule
+    RTI -.->|"Global"| AppModule
+    AEF -.->|"Global"| AppModule
+
+    %% Styles
+    classDef root fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px
+    classDef global fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef business fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef redis fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef service fill:#fff8e1,stroke:#f9a825,stroke-width:2px
+    classDef guard fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef interceptor fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    
+    class AppModule root
+    class FM,PM,RM,SM,CM,QM,SEM global
+    class AM,UM,EM,CAM,MM,DM,OM,NM,SIM,CHM,AC,UC,EC,CC,MC,DC,OC,NC,SIC business
+    class AS,US,ES,CS,MS,DS,OS,NS,SIS,CHS business
+    class RS,SRS,CAS redis
+    class FS,PS,SAN service
+    class TH,IP,AG guard
+    class LI,RTI,AEF interceptor
+```

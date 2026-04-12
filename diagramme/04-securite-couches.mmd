@@ -1,0 +1,137 @@
+```mermaid
+%% CampusLink - Architecture Sécurité Multi-Couches (Mis à jour Avril 2025)
+
+flowchart TB
+    subgraph Legend["📋 Légende"]
+        direction LR
+        L1["🔴 Layer 1: Réseau"]
+        L2["🟠 Layer 2: Application"]
+        L3["🟡 Layer 3: Auth"]
+        L4["🟢 Layer 4: Données"]
+        L5["🔵 Layer 5: Monitoring"]
+    end
+
+    subgraph Client["📱 Client"]
+        BROWSER["Browser / Mobile"]
+    end
+
+    subgraph Layer1["🔴 LAYER 1: Réseau & Transport"]
+        direction TB
+        HTTPS["🔒 HTTPS (TLS 1.3)"]
+        CORS["🌐 CORS Configuré\nOrigine: localhost:3000"]
+        HELMET["🛡️ Helmet Headers\nX-Frame-Options, CSP, etc."]
+        IP_FILTER["🚫 IP Filtering\n(Blacklist check)"]
+    end
+
+    subgraph Layer2["🟠 LAYER 2: Rate Limiting & Protection"]
+        direction TB
+        TH_GLOBAL["⚡ ThrottlerModule Global\n100 req/min par IP"]
+        TH_CUSTOM["🔥 RedisThrottlerGuard\nCustom par endpoint"]
+        
+        subgraph RateLimits["📊 Rate Limits Configurés"]
+            RL_AUTH["Auth: 5 req / 15 min\nBlock: 15 min"]
+            RL_FORGOT["Forgot: 3 req / 15 min\nBlock: 15 min"]
+            RL_RESET["Reset: 3 req / 15 min\nBlock: 15 min"]
+            RL_API["API Standard: 100 req / min\nBlock: 5 min"]
+        end
+        
+        BRUTE_FORCE["🛡️ Anti-Brute Force\nMax 5 tentatives / 15 min"]
+    end
+
+    subgraph Layer3["🟡 LAYER 3: Authentification & Autorisation"]
+        direction TB
+        FIREBASE["🔥 Firebase Auth\nJWT Verification"]
+        AUTH_GUARD["🔐 AuthGuard\nToken validation"]
+        ROLES["👥 Role Guard\n(student/delegate/admin)"]
+        OWNERSHIP["✋ Ownership Guard\nRessource access"]
+        BAN_CHECK["🚫 Ban Check\nestBanni = false"]
+    end
+
+    subgraph Layer4["🟢 LAYER 4: Validation & Sanitization"]
+        direction TB
+        DTO_VAL["📋 DTO Validation\nclass-validator"]
+        SANITIZE["🧼 HTML Sanitization\nDOMPurify"]
+        XSS["🛡️ XSS Protection\nÉchappement HTML"]
+        SQL["🛡️ SQL Injection\nPrisma ORM (paramètres)"]
+        
+        subgraph ValidationRules["✅ Règles de Validation"]
+            UUID["@IsUUID() pour IDs"]
+            EMAIL["@IsEmail() pour emails"]
+            LENGTH["@Length() / @MinLength()"]
+            ENUM["@IsEnum() pour enums"]
+        end
+    end
+
+    subgraph Layer5["🔵 LAYER 5: Data & Audit"]
+        direction TB
+        PRISMA["🐘 Prisma ORM\nAccès contrôlé"]
+        AUDIT["📊 Audit Logs\nAction + User + IP"]
+        ENCRYPT["🔐 Encryption\nTokens hashés (bcryptjs)"]
+        TTL["⏰ TTL Redis\nAuto-expiration données temporaires"]
+    end
+
+    subgraph Monitoring["📈 Monitoring & Alertes"]
+        SENTRY["🚨 Sentry\nError Tracking"]
+        HEALTH["🏥 Health Checks\n/health endpoint"]
+        LOGS["📝 Logs Détaillés\nPino Logger"]
+    end
+
+    %% Flux
+    BROWSER --> HTTPS
+    HTTPS --> CORS
+    CORS --> HELMET
+    HELMET --> IP_FILTER
+    
+    IP_FILTER --> TH_GLOBAL
+    TH_GLOBAL --> TH_CUSTOM
+    TH_CUSTOM --> RL_AUTH
+    TH_CUSTOM --> RL_FORGOT
+    TH_CUSTOM --> RL_RESET
+    TH_CUSTOM --> RL_API
+    
+    TH_CUSTOM --> BRUTE_FORCE
+    BRUTE_FORCE --> FIREBASE
+    
+    FIREBASE --> AUTH_GUARD
+    AUTH_GUARD --> BAN_CHECK
+    BAN_CHECK --> ROLES
+    ROLES --> OWNERSHIP
+    
+    OWNERSHIP --> DTO_VAL
+    DTO_VAL --> UUID
+    DTO_VAL --> EMAIL
+    DTO_VAL --> LENGTH
+    DTO_VAL --> ENUM
+    
+    DTO_VAL --> SANITIZE
+    SANITIZE --> XSS
+    XSS --> SQL
+    
+    SQL --> PRISMA
+    PRISMA --> ENCRYPT
+    ENCRYPT --> TTL
+    TTL --> AUDIT
+    
+    %% Monitoring (touches tout)
+    HTTPS -.-> LOGS
+    TH_CUSTOM -.-> SENTRY
+    AUTH_GUARD -.-> SENTRY
+    PRISMA -.-> SENTRY
+    PRISMA -.-> HEALTH
+    AUDIT -.-> LOGS
+
+    %% Styles
+    classDef layer1 fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px
+    classDef layer2 fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+    classDef layer3 fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef layer4 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    classDef layer5 fill:#bbdefb,stroke:#1565c0,stroke-width:2px
+    classDef monitoring fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px
+    
+    class HTTPS,CORS,HELMET,IP_FILTER layer1
+    class TH_GLOBAL,TH_CUSTOM,RL_AUTH,RL_FORGOT,RL_RESET,RL_API,BRUTE_FORCE layer2
+    class FIREBASE,AUTH_GUARD,ROLES,OWNERSHIP,BAN_CHECK layer3
+    class DTO_VAL,SANITIZE,XSS,SQL,UUID,EMAIL,LENGTH,ENUM layer4
+    class PRISMA,AUDIT,ENCRYPT,TTL layer5
+    class SENTRY,HEALTH,LOGS monitoring
+```

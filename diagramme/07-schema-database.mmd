@@ -1,0 +1,338 @@
+```mermaid
+%% CampusLink - Schéma Base de Données (Mis à jour Avril 2025)
+%% Prisma Schema Visualisation
+
+erDiagram
+    %% ============================================================
+    %% TABLES FONDAMENTALES
+    %% ============================================================
+    UNIVERSITE {
+        uuid id PK
+        string nom UK
+        string ville
+        string pays "default: Senegal"
+        string logo_url
+        boolean est_actif
+    }
+    
+    FILIERE {
+        uuid id PK
+        uuid universite_id FK
+        string nom
+        string code
+        boolean est_actif
+    }
+    
+    %% ============================================================
+    %% UTILISATEURS & PROFILS
+    %% ============================================================
+    UTILISATEUR {
+        uuid id PK
+        string firebase_uid UK
+        string telephone UK
+        string email UK
+        enum role "student|delegate|admin|superadmin"
+        boolean est_actif
+        boolean est_banni
+        datetime banni_le
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+    
+    PROFIL {
+        uuid id PK
+        uuid utilisateur_id FK_UK
+        uuid universite_id FK
+        uuid filiere_id FK
+        string prenom
+        string nom
+        string avatar_url
+        enum niveau "L1|L2|L3|M1|M2"
+        string photo_carte_url
+        enum statut_verification "pending|verified|rejected"
+        datetime verifie_le
+        int score_reputation "default: 0"
+    }
+    
+    VERIFICATION {
+        uuid id PK
+        uuid utilisateur_id FK_UK
+        string photo_carte_url
+        enum statut "pending|verified|rejected"
+        datetime soumis_le
+        datetime decide_le
+        uuid admin_id FK
+        string motif_rejet
+    }
+    
+    %% ============================================================
+    %% ESPACES & CANAUX
+    %% ============================================================
+    ESPACE {
+        uuid id PK
+        uuid universite_id FK
+        uuid filiere_id FK
+        string nom
+        string type_espace
+        string niveau
+        boolean est_public
+        boolean est_actif
+        datetime created_at
+        datetime updated_at
+    }
+    
+    ESPACE_MEMBRE {
+        uuid id PK
+        uuid espace_id FK
+        uuid utilisateur_id FK
+        datetime rejoint_le
+    }
+    
+    CANAL {
+        uuid id PK
+        uuid espace_id FK
+        string nom
+        string description
+        boolean est_public
+        boolean est_actif
+        datetime created_at
+        datetime updated_at
+    }
+    
+    CANAL_MEMBRE {
+        uuid id PK
+        uuid canal_id FK
+        uuid utilisateur_id FK
+        datetime rejoint_le
+    }
+    
+    %% ============================================================
+    %% MESSAGES & DOCUMENTS
+    %% ============================================================
+    MESSAGE {
+        uuid id PK
+        uuid canal_id FK
+        uuid auteur_id FK
+        uuid parent_id FK
+        enum type "annonce|question|ressource|discussion"
+        string contenu
+        boolean est_epingle
+        boolean est_masque
+        int votes_positifs
+        boolean est_anonyme
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at
+    }
+    
+    DOCUMENT {
+        uuid id PK
+        uuid canal_id FK
+        uuid uploader_id FK
+        string titre
+        string description
+        enum type_fichier "cours|exam|resume|exercice|autre"
+        string url_fichier
+        string mime_type
+        int taille_octets
+        int nb_telechargements
+        boolean est_public
+        datetime created_at
+        datetime updated_at
+    }
+    
+    %% ============================================================
+    %% OPPORTUNITÉS
+    %% ============================================================
+    OPPORTUNITE {
+        uuid id PK
+        uuid auteur_id FK
+        string titre
+        string description
+        string entreprise
+        enum type_offre "stage|emploi|bourse|concours|evenement"
+        string domaine
+        enum niveau_requis "L1|L2|L3|M1|M2|tous"
+        datetime date_limite
+        string localisation
+        string url_externe
+        boolean est_active
+        boolean est_expiree
+        int nb_vues
+    }
+    
+    OPPORTUNITE_TAG {
+        uuid id PK
+        uuid opportunite_id FK
+        string tag
+    }
+    
+    %% ============================================================
+    %% NOTIFICATIONS
+    %% ============================================================
+    NOTIFICATION {
+        uuid id PK
+        uuid utilisateur_id FK
+        enum type "opportunite|message|document|mention|systeme|moderation"
+        string titre
+        string corps
+        json donnees
+        boolean est_lue
+        datetime lue_le
+        datetime created_at
+    }
+    
+    TOKEN_APPAREIL {
+        uuid id PK
+        uuid utilisateur_id FK
+        string token UK
+        string plateforme "android|ios|web"
+        boolean est_actif
+    }
+    
+    %% ============================================================
+    %% MODÉRATION
+    %% ============================================================
+    SIGNALEMENT {
+        uuid id PK
+        uuid rapporteur_id FK
+        uuid cible_user_id FK
+        uuid message_id FK
+        uuid document_id FK
+        uuid opportunite_id FK
+        enum raison "spam|inapproprie|harcelement|desinformation|autre"
+        string details
+        enum statut "ouvert|en_cours|resolu|classe"
+        datetime resolu_le
+        datetime created_at
+    }
+    
+    ACTION_MODERATION {
+        uuid id PK
+        uuid moderateur_id FK
+        uuid cible_id FK
+        enum action "avertissement|masquer|supprimer|suspendre|bannir"
+        string raison
+        datetime created_at
+    }
+    
+    %% ============================================================
+    %% SÉCURITÉ
+    %% ============================================================
+    TENTATIVE_CONNEXION {
+        uuid id PK
+        uuid utilisateur_id FK
+        string telephone
+        string ip
+        string user_agent
+        enum statut "reussi|echoue|bloque"
+        int nb_echecs
+        datetime bloque_jusqua
+        datetime created_at
+    }
+    
+    TOKEN_RESET_PASSWORD {
+        uuid id PK
+        uuid utilisateur_id FK
+        string token UK
+        datetime expire_le
+        datetime utilise_le
+        datetime created_at
+    }
+    
+    IP_BLOQUEE {
+        uuid id PK
+        string ip UK
+        string raison
+        datetime bloque_le
+        datetime expire_le
+        int nb_requetes
+        datetime derniere_requete
+    }
+    
+    %% ============================================================
+    %% JOBS & AUDIT
+    %% ============================================================
+    JOB {
+        uuid id PK
+        enum type "push|email|sms|expiration|nettoyage|rappel"
+        enum statut "pending|processing|done|failed"
+        json payload
+        int tentatives
+        int max_tentatives
+        string derniere_erreur
+        datetime prevu_le
+        datetime traite_le
+        datetime created_at
+    }
+    
+    AUDIT_LOG {
+        uuid id PK
+        uuid utilisateur_id FK
+        string action
+        string ressource
+        string ressource_id
+        json metadata
+        string ip
+        string user_agent
+        datetime created_at
+    }
+    
+    %% ============================================================
+    %% MARKETPLACE (Phase 2)
+    %% ============================================================
+    ARTICLE_MARCHE {
+        uuid id PK
+        uuid vendeur_id FK
+        string titre
+        string description
+        decimal prix
+        enum categorie "service|materiel|tutorat|autre"
+        enum statut "actif|vendu|archive"
+        string[] images_urls
+        datetime created_at
+        datetime updated_at
+    }
+    
+    %% ============================================================
+    %% RELATIONS
+    %% ============================================================
+    UNIVERSITE ||--o{ FILIERE : "contient"
+    UNIVERSITE ||--o{ ESPACE : "a des"
+    UNIVERSITE ||--o{ PROFIL : "référencé par"
+    
+    FILIERE ||--o{ ESPACE : "contient"
+    FILIERE ||--o{ PROFIL : "référencé par"
+    
+    UTILISATEUR ||--o| PROFIL : "possède"
+    UTILISATEUR ||--o| VERIFICATION : "demande"
+    UTILISATEUR ||--o{ ESPACE_MEMBRE : "appartient"
+    UTILISATEUR ||--o{ CANAL_MEMBRE : "appartient"
+    UTILISATEUR ||--o{ MESSAGE : "écrit"
+    UTILISATEUR ||--o{ DOCUMENT : "upload"
+    UTILISATEUR ||--o{ OPPORTUNITE : "crée"
+    UTILISATEUR ||--o{ NOTIFICATION : "reçoit"
+    UTILISATEUR ||--o{ SIGNALEMENT : "rapporte"
+    UTILISATEUR ||--o{ SIGNALEMENT : "cible"
+    UTILISATEUR ||--o{ TOKEN_APPAREIL : "possède"
+    UTILISATEUR ||--o{ ARTICLE_MARCHE : "vend"
+    UTILISATEUR ||--o{ TENTATIVE_CONNEXION : "a des"
+    UTILISATEUR ||--o{ TOKEN_RESET_PASSWORD : "possède"
+    UTILISATEUR ||--o{ AUDIT_LOG : "génère"
+    
+    ESPACE ||--o{ CANAL : "contient"
+    ESPACE ||--o{ ESPACE_MEMBRE : "a des"
+    
+    CANAL ||--o{ MESSAGE : "contient"
+    CANAL ||--o{ DOCUMENT : "contient"
+    CANAL ||--o{ CANAL_MEMBRE : "a des"
+    
+    MESSAGE ||--o{ MESSAGE : "répond à"
+    MESSAGE ||--o{ SIGNALEMENT : "signalé"
+    
+    DOCUMENT ||--o{ SIGNALEMENT : "signalé"
+    
+    OPPORTUNITE ||--o{ OPPORTUNITE_TAG : "a des"
+    OPPORTUNITE ||--o{ SIGNALEMENT : "signalé"
+```

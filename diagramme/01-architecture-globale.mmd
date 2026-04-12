@@ -1,0 +1,192 @@
+```mermaid
+%% CampusLink - Architecture Globale (Mis à jour Avril 2025)
+%% Inclut Redis Upstash, Sécurité, Rate Limiting
+
+flowchart TB
+    subgraph Client["📱 Client (React/Next.js)"]
+        WEB["Web App"]
+        MOBILE["Mobile App"]
+    end
+
+    subgraph AuthLayer["🔐 Couche Authentification"]
+        FIREBASE["Firebase Auth\n(OTP/Email/Téléphone)"]
+    end
+
+    subgraph APILayer["🚀 API Layer - NestJS"]
+        direction TB
+        
+        subgraph Guards["🛡️ Guards (Sécurité)"]
+            AUTH_GUARD["AuthGuard\n(JWT Firebase)"]
+            THROTTLE["RedisThrottlerGuard\n(Rate Limiting)"]
+            IP_BLOCKER["IpBlockerGuard\n(Blocs IP)"]
+        end
+        
+        subgraph Interceptors["⚡ Interceptors"]
+            LOGGING["LoggingInterceptor"]
+            TRANSFORM["ResponseTransformInterceptor"]
+        end
+        
+        subgraph Controllers["📡 Controllers (REST)"]
+            AUTH_CTRL["AuthController\n/login /forgot /reset"]
+            USERS_CTRL["UsersController"]
+            ESPACES_CTRL["EspacesController"]
+            CANAUX_CTRL["CanauxController"]
+            MESSAGES_CTRL["MessagesController"]
+            DOCS_CTRL["DocumentsController"]
+            OPPS_CTRL["OpportunitesController"]
+            NOTIFS_CTRL["NotificationsController"]
+            SIGNS_CTRL["SignalementsController"]
+            CHAT_GATEWAY["ChatGateway\n(WebSocket)"]
+        end
+        
+        subgraph Services["⚙️ Services Business"]
+            AUTH_SVC["AuthService"]
+            USERS_SVC["UsersService"]
+            ESPACES_SVC["EspacesService"]
+            CANAUX_SVC["CanauxService"]
+            MESSAGES_SVC["MessagesService"]
+            DOCS_SVC["DocumentsService"]
+            OPPS_SVC["OpportunitesService"]
+            NOTIFS_SVC["NotificationsService"]
+            SIGNS_SVC["SignalementsService"]
+            CHAT_SVC["ChatService"]
+        end
+        
+        subgraph SharedServices["🔧 Services Partagés"]
+            PRISMA["PrismaService\n(PostgreSQL)"]
+            FIREBASE_SVC["FirebaseService\n(Push/Auth)"]
+            REDIS["🔥 RedisService\n(Upstash REST)"]
+            SECURITY["SecurityRedisService\n(Anti-Brute Force)"]
+            CACHE["CacheService\n(TTL 30-120s)"]
+            SEARCH["SearchService\n(Elasticsearch)"]
+            QUEUE["QueueService\n(Bull Jobs)"]
+            SANITIZE["SanitizationService\n(DOMPurify)"]
+        end
+    end
+
+    subgraph DataLayer["💾 Data Layer"]
+        subgraph PostgreSQL[("🐘 PostgreSQL")]
+            USERS_TAB[("Utilisateurs")]
+            PROFILS_TAB[("Profils")]
+            ESPACES_TAB[("Espaces")]
+            CANAUX_TAB[("Canaux")]
+            MESSAGES_TAB[("Messages")]
+            DOCS_TAB[("Documents")]
+            OPPS_TAB[("Opportunites")]
+            NOTIFS_TAB[("Notifications")]
+            SIGNS_TAB[("Signalements")]
+            AUDIT_TAB[("AuditLogs")]
+            IPS_TAB[("IpsBloquees")]
+        end
+        
+        subgraph RedisCache[("⚡ Redis Upstash")]
+            RATE_KEYS["rate:{ip}\n(60s TTL)"]
+            BLOCK_KEYS["block:{ip}\n(300s TTL)"]
+            LOGIN_KEYS["login:{ip}\n(900s TTL)"]
+            RESET_KEYS["reset:{user}\n(600s TTL)"]
+            CACHE_USER["cache:user:{id}\n(60s TTL)"]
+            CACHE_CANAL["cache:canal:{id}\n(30s TTL)"]
+            CACHE_ESPACE["cache:espace:{id}\n(120s TTL)"]
+        end
+    end
+
+    subgraph External["🌐 Services Externes"]
+        FIREBASE_PUSH["Firebase\nCloud Messaging"]
+        ELASTIC["Elasticsearch"]
+        SENTRY["Sentry\n(Monitoring)"]
+    end
+
+    %% Flux Client
+    WEB --> FIREBASE
+    MOBILE --> FIREBASE
+    
+    %% Auth → API
+    FIREBASE -->|"JWT Token"| AUTH_GUARD
+    
+    %% Flux Guards
+    AUTH_GUARD --> THROTTLE
+    THROTTLE --> IP_BLOCKER
+    IP_BLOCKER --> Interceptors
+    
+    %% Flux Interceptors → Controllers
+    Interceptors --> Controllers
+    
+    %% Controllers → Services
+    AUTH_CTRL --> AUTH_SVC
+    USERS_CTRL --> USERS_SVC
+    ESPACES_CTRL --> ESPACES_SVC
+    CANAUX_CTRL --> CANAUX_SVC
+    MESSAGES_CTRL --> MESSAGES_SVC
+    DOCS_CTRL --> DOCS_SVC
+    OPPS_CTRL --> OPPS_SVC
+    NOTIFS_CTRL --> NOTIFS_SVC
+    SIGNS_CTRL --> SIGNS_SVC
+    CHAT_GATEWAY --> CHAT_SVC
+    
+    %% Services → Shared
+    AUTH_SVC --> REDIS
+    AUTH_SVC --> SECURITY
+    AUTH_SVC --> PRISMA
+    
+    USERS_SVC --> CACHE
+    USERS_SVC --> PRISMA
+    
+    ESPACES_SVC --> CACHE
+    ESPACES_SVC --> PRISMA
+    
+    CANAUX_SVC --> CACHE
+    CANAUX_SVC --> PRISMA
+    
+    MESSAGES_SVC --> PRISMA
+    MESSAGES_SVC --> SANITIZE
+    
+    DOCS_SVC --> PRISMA
+    
+    OPPS_SVC --> SEARCH
+    OPPS_SVC --> PRISMA
+    
+    NOTIFS_SVC --> FIREBASE_SVC
+    NOTIFS_SVC --> QUEUE
+    NOTIFS_SVC --> PRISMA
+    
+    SIGNS_SVC --> PRISMA
+    
+    CHAT_SVC --> PRISMA
+    CHAT_SVC --> FIREBASE_SVC
+    
+    %% Shared → Data
+    PRISMA --> PostgreSQL
+    REDIS --> RedisCache
+    FIREBASE_SVC --> FIREBASE_PUSH
+    SEARCH --> ELASTIC
+    
+    %% Cache Invalidation
+    USERS_SVC -.->|"Invalidate"| CACHE_USER
+    CANAUX_SVC -.->|"Invalidate"| CACHE_CANAL
+    ESPACES_SVC -.->|"Invalidate"| CACHE_ESPACE
+    
+    %% Security Flow
+    THROTTLE -.->|"Check/Incr"| RATE_KEYS
+    THROTTLE -.->|"Check Block"| BLOCK_KEYS
+    SECURITY -.->|"Track"| LOGIN_KEYS
+    SECURITY -.->|"Store"| RESET_KEYS
+    
+    %% Styles
+    classDef client fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef auth fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef guard fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef controller fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef service fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef redis fill:#ffebee,stroke:#c62828,stroke-width:3px
+    classDef database fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef external fill:#fff8e1,stroke:#f9a825,stroke-width:2px
+    
+    class WEB,MOBILE client
+    class FIREBASE auth
+    class AUTH_GUARD,THROTTLE,IP_BLOCKER guard
+    class AUTH_CTRL,USERS_CTRL,ESPACES_CTRL,CANAUX_CTRL,MESSAGES_CTRL,DOCS_CTRL,OPPS_CTRL,NOTIFS_CTRL,SIGNS_CTRL,CHAT_GATEWAY controller
+    class AUTH_SVC,USERS_SVC,ESPACES_SVC,CANAUX_SVC,MESSAGES_SVC,DOCS_SVC,OPPS_SVC,NOTIFS_SVC,SIGNS_SVC,CHAT_SVC service
+    class REDIS,SECURITY,CACHE redis
+    class PostgreSQL,RedisCache database
+    class FIREBASE_PUSH,ELASTIC,SENTRY external
+```

@@ -1,0 +1,172 @@
+```mermaid
+%% CampusLink - Flux Complet d'une Requête (Mis à jour Avril 2025)
+%% Exemple: POST /api/v1/users/profile
+
+sequenceDiagram
+    autonumber
+    
+    actor U as 👤 Utilisateur
+    participant C as 📱 Client App
+    participant NG as 🌐 Nginx/Load Balancer
+    participant API as 🚀 NestJS App
+    participant TH as ⚡ Throttler Guard
+    participant AG as 🔐 Auth Guard
+    participant IP as 🚫 IP Blocker
+    participant LI as 📝 Logging Interceptor
+    participant RT as 🔄 Response Transform
+    participant CTRL as 📡 Controller
+    participant SVC as ⚙️ Service
+    participant CACHE as 💾 Cache Service
+    participant REDIS as ⚡ Redis
+    participant PRISMA as 🐘 Prisma
+    participant DB as 💿 PostgreSQL
+    participant FB as 🔥 Firebase
+
+    Note over U,FB: 🌐 REQUÊTE: GET /api/v1/users/profile
+
+    %% Étape 1: Client
+    U->>C: Ouvre l'application
+    C->>C: Récupère JWT Token (Firebase)
+    
+    %% Étape 2: Envoi requête
+    C->>NG: GET /api/v1/users/profile<br/>Authorization: Bearer {jwt}<br/>X-Forwarded-For: 192.168.1.1
+    
+    %% Étape 3: Security Headers
+    NG->>NG: Check HTTPS
+    NG->>NG: Apply Security Headers (Helmet)
+    
+    %% Étape 4: CORS
+    NG->>API: Forward request
+    API->>API: CORS Check (origin: localhost:3000)
+    
+    %% Étape 5: Global Exception Filter
+    API->>API: AllExceptionsFilter attached
+
+    %% Étape 6: Rate Limiting
+    API->>TH: RedisThrottlerGuard
+    TH->>REDIS: EXISTS block:192.168.1.1
+    REDIS-->>TH: 0 (not blocked)
+    
+    TH->>REDIS: GET rate:192.168.1.1
+    REDIS-->>TH: 45 (requests this minute)
+    
+    alt Rate limit exceeded
+        TH->>REDIS: SET block:192.168.1.1 1 EX 300
+        TH-->>API: ❌ HttpException(429)
+        API-->>NG: 429 Too Many Requests
+        NG-->>C: { success: false, message: "Too many requests", retryAfter: 300 }
+    else Rate OK
+        TH->>REDIS: INCR rate:192.168.1.1<br/>EX 60
+        TH-->>API: ✅ Continue
+    end
+
+    %% Étape 7: IP Blocking
+    API->>IP: IpBlockerGuard
+    IP->>PRISMA: SELECT * FROM ips_bloquees WHERE ip = '192.168.1.1'
+    PRISMA->>DB: Query
+    DB-->>PRISMA: No result
+    PRISMA-->>IP: IP not blocked
+    IP-->>API: ✅ Continue
+
+    %% Étape 8: Auth Guard
+    API->>AG: AuthGuard
+    AG->>AG: Extract Bearer token
+    
+    alt No token
+        AG-->>API: ❌ 401 Unauthorized
+    else Token present
+        AG->>FB: Verify JWT
+        FB-->>AG: ✅ Token valid { uid, phone }
+        
+        AG->>PRISMA: SELECT * FROM utilisateurs WHERE firebase_uid = 'abc123'
+        PRISMA->>DB: Query
+        DB-->>PRISMA: User record
+        PRISMA-->>AG: User object
+        
+        alt User banned
+            AG-->>API: ❌ 403 Forbidden (User banned)
+        else User active
+            AG->>AG: Attach user to req
+            AG-->>API: ✅ Continue with req.user
+        end
+    end
+
+    %% Étape 9: Logging Interceptor
+    API->>LI: LoggingInterceptor
+    LI->>LI: Start timer
+    LI->>LI: Log: [GET] /api/v1/users/profile - User: abc-123
+
+    %% Étape 10: Controller
+    LI->>CTRL: UsersController.getProfile(@Req() req)
+    CTRL->>SVC: usersService.getProfile(req.user.id)
+
+    %% Étape 11: Cache Check
+    SVC->>CACHE: cacheService.getUser(userId)
+    CACHE->>REDIS: GET cache:user:abc123
+    REDIS-->>CACHE: null (cache miss)
+    
+    %% Étape 12: Database Query
+    CACHE->>SVC: Cache miss
+    SVC->>PRISMA: prisma.profil.findUnique({ where: { utilisateurId } })
+    PRISMA->>DB: SELECT * FROM profils WHERE utilisateur_id = 'abc123'
+    DB-->>PRISMA: Profil data
+    PRISMA-->>SVC: Profil object
+    
+    %% Étape 13: Cache Set
+    SVC->>CACHE: cacheService.setUser(userId, profil, 60)
+    CACHE->>REDIS: SET cache:user:abc123 {data} EX 60
+    REDIS-->>CACHE: OK
+    
+    %% Étape 14: Return
+    CACHE-->>SVC: ✅
+    SVC-->>CTRL: Profil data
+    CTRL-->>LI: Return data
+
+    %% Étape 15: Response Transform
+    LI->>RT: ResponseTransformInterceptor
+    RT->>RT: Transform to standard format
+    RT->>RT: { success: true, data: {...}, statusCode: 200 }
+    
+    %% Étape 16: Logging End
+    RT->>LI: Continue
+    LI->>LI: Stop timer
+    LI->>LI: Log: 200 - 45ms
+
+    %% Étape 17: Response
+    LI-->>API: Transformed response
+    API-->>NG: 200 OK + JSON
+    NG-->>C: { success: true, data: {...} }
+
+    Note over U,FB: ✅ REQUÊTE COMPLÉTÉE EN ~50ms
+
+    %% Error Handling Example
+    Note over U,FB: ⚠️ EXEMPLE: GESTION ERREUR
+    
+    C->>NG: GET /api/v1/users/invalid-id
+    NG->>API: Forward
+    API->>TH: Check rate
+    TH-->>API: ✅
+    
+    API->>AG: Check auth
+    AG-->>API: ✅
+    
+    API->>LI: Log start
+    LI->>CTRL: Call method
+    CTRL->>SVC: Process
+    SVC->>PRISMA: Query with invalid UUID
+    PRISMA->>DB: Query
+    DB-->>PRISMA: Error: invalid input syntax
+    PRISMA-->>SVC: PrismaClientKnownRequestError
+    
+    SVC-->>CTRL: Throw error
+    CTRL-->>LI: Error thrown
+    LI->>RT: Catch error
+    RT->>AEF: AllExceptionsFilter
+    
+    AEF->>AEF: Format error response
+    AEF->>AEF: Log error details
+    AEF->>SENTRY: Report error (if critical)
+    
+    AEF-->>NG: { success: false, message: "Invalid UUID format", statusCode: 400 }
+    NG-->>C: 400 Bad Request
+```

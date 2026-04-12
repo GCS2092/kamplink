@@ -1,0 +1,135 @@
+```mermaid
+%% CampusLink - Architecture Redis Upstash (Mis à jour Avril 2025)
+%% Optimisé pour Free Tier (250MB / 10GB)
+
+flowchart TB
+    subgraph Client["📱 Client"]
+        REQ["Requête HTTP"]
+    end
+
+    subgraph NestJS["🚀 NestJS Application"]
+        direction TB
+        
+        subgraph Guards["🛡️ Guards"]
+            TH["RedisThrottlerGuard"]
+            IP["IpBlockerGuard"]
+        end
+        
+        subgraph RedisServices["🔥 Services Redis"]
+            RS["RedisService\n(Base)"]
+            SRS["SecurityRedisService\n(Sécurité)"]
+            CS["CacheService\n(Cache)"]
+        end
+        
+        subgraph Controllers["📡 Controllers"]
+            AC["AuthController"]
+            UC["UsersController"]
+            EC["EspacesController"]
+            CC["CanauxController"]
+        end
+    end
+
+    subgraph Upstash["☁️ Upstash Redis (REST API)"]
+        direction TB
+        
+        subgraph RateLimiting["⚡ Rate Limiting"]
+            RATE["🔑 rate:{ip}\nCompteur requêtes\nTTL: 60s"]
+            BLOCK["🔒 block:{ip}\nFlag blocage\nTTL: 300-900s"]
+        end
+        
+        subgraph Security["🛡️ Sécurité"]
+            LOGIN["🔐 login:{ip}:{userId}\nTentatives connexion\nTTL: 900s"]
+            RESET["🔄 reset:{userId}:{hash}\nTokens reset password\nTTL: 600s"]
+            OTP["📱 otp:{phone}\nCodes OTP (si utilisé)\nTTL: 300s"]
+        end
+        
+        subgraph Cache["💾 Cache Temporaire"]
+            USER["👤 cache:user:{id}\nProfils utilisateurs\nTTL: 60s\nMax: 10KB"]
+            CANAL["💬 cache:canal:{id}\nMétadonnées canaux\nTTL: 30s\nMax: 10KB"]
+            ESPACE["🏛️ cache:espace:{id}\nMétadonnées espaces\nTTL: 120s\nMax: 10KB"]
+        end
+    end
+
+    subgraph Database["🐘 PostgreSQL"]
+        direction TB
+        DB_USERS["utilisateurs"]
+        DB_PROFILES["profils"]
+        DB_ESPACES["espaces"]
+        DB_CANAUX["canaux"]
+    end
+
+    subgraph Fallback["⚠️ Fallback Strategy"]
+        FAIL_OPEN["✅ Fail Open\nRedis down = Allow"]
+        DB_FALLBACK["🔄 DB Fallback\nCache miss = Query DB"]
+    end
+
+    %% Flux
+    REQ --> TH
+    
+    %% Throttler Flow
+    TH -->|"1. Check exists"| RATE
+    TH -->|"2. Check block"| BLOCK
+    RATE -->|"3. Incr counter"| RATE
+    
+    TH -->|"Pass / Block"| IP
+    IP -->|"Pass"| AC
+    
+    %% Auth Flow
+    AC -->|"Track attempt"| SRS
+    SRS --> LOGIN
+    
+    AC -->|"Store token"| RESET
+    
+    %% Users Flow avec Cache
+    UC -->|"1. Get cache"| CS
+    CS -->|"GET"| USER
+    
+    alt Cache Hit
+        USER -->|"✅ Return"| CS
+        CS -->|"Cached data"| UC
+    else Cache Miss
+        USER -->|"❌ Miss"| CS
+        CS -->|"Query DB"| DB_PROFILES
+        DB_PROFILES -->|"Data"| CS
+        CS -->|"SET + TTL"| USER
+        CS -->|"Return"| UC
+    end
+    
+    %% Espaces/Canaux Flow
+    EC -->|"Cache"| CS
+    CS -->|"GET/SET"| ESPACE
+    ESPACE --> DB_ESPACES
+    
+    CC -->|"Cache"| CS
+    CS -->|"GET/SET"| CANAL
+    CANAL --> DB_CANAUX
+    
+    %% Fail Open Strategy
+    RS -.->|"isConnected() = false"| FAIL_OPEN
+    SRS -.->|"Redis error"| FAIL_OPEN
+    FAIL_OPEN -.->|"Allow request"| Controllers
+    
+    %% Invalidation
+    UC -.->|"Update profile"| CS
+    CS -.->|"DEL cache:user:{id}"| USER
+    
+    EC -.->|"Update espace"| CS
+    CS -.->|"DEL cache:espace:{id}"| ESPACE
+
+    %% Styles
+    classDef client fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef nestjs fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef service fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    classDef redis fill:#ffebee,stroke:#c62828,stroke-width:2px
+    classDef database fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef fallback fill:#fff8e1,stroke:#f9a825,stroke-width:2px
+    classDef ttl fill:#ffccbc,stroke:#d84315,stroke-width:1px
+    
+    class REQ client
+    class TH,IP,AC,UC,EC,CC nestjs
+    class RS,SRS,CS service
+    class RATE,BLOCK,LOGIN,RESET,OTP,USER,CANAL,ESPACE redis
+    class RATE,BLOCK,LOGIN,RESET,OTP,USER,CANAL,ESPACE ttl
+    class DB_USERS,DB_PROFILES,DB_ESPACES,DB_CANAUX database
+    class FAIL_OPEN,DB_FALLBACK fallback
+```
