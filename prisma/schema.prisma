@@ -1,0 +1,547 @@
+// ============================================================
+// kamplink — schema.prisma
+// Stack : NestJS + PostgreSQL + Prisma + Firebase Auth
+// ============================================================
+// NOTE Firebase : Firebase gère uniquement l'auth (OTP/tokens).
+// Le champ firebase_uid dans la table utilisateurs fait le lien
+// entre un token Firebase et ton utilisateur PostgreSQL.
+// Prisma ne touche pas à Firebase — tout est dans PostgreSQL.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  student
+  delegate
+  admin
+  superadmin
+}
+
+enum Niveau {
+  L1
+  L2
+  L3
+  M1
+  M2
+}
+
+enum NiveauRequis {
+  L1
+  L2
+  L3
+  M1
+  M2
+  tous
+}
+
+enum StatutVerification {
+  pending
+  verified
+  rejected
+}
+
+enum TypeFichier {
+  cours
+  exam
+  resume
+  exercice
+  autre
+}
+
+enum TypeMessage {
+  annonce
+  question
+  ressource
+  discussion
+}
+
+enum TypeOffre {
+  stage
+  emploi
+  bourse
+  concours
+  evenement
+}
+
+enum TypeNotification {
+  opportunite
+  message
+  document
+  mention
+  systeme
+  moderation
+}
+
+enum RaisonSignalement {
+  spam
+  inapproprie
+  harcelement
+  desinformation
+  autre
+}
+
+enum StatutSignalement {
+  ouvert
+  en_cours
+  resolu
+  classe
+}
+
+enum ActionModeration {
+  avertissement
+  masquer
+  supprimer
+  suspendre
+  bannir
+}
+
+enum TypeJob {
+  push
+  email
+  sms
+  expiration
+  nettoyage
+  rappel
+}
+
+enum StatutJob {
+  pending
+  processing
+  done
+  failed
+}
+
+enum CategorieMarche {
+  service
+  materiel
+  tutorat
+  autre
+}
+
+enum StatutArticle {
+  actif
+  vendu
+  archive
+}
+
+// ============================================================
+// TABLES FONDAMENTALES (sans dépendances)
+// ============================================================
+
+model Universite {
+  id        String   @id @default(uuid())
+  nom       String   @unique
+  ville     String
+  pays      String   @default("Senegal")
+  logoUrl   String?  @map("logo_url")
+  estActif  Boolean  @default(true) @map("est_actif")
+
+  filieres  Filiere[]
+  espaces   Espace[]
+  profils   Profil[]
+
+  @@map("universites")
+}
+
+model Filiere {
+  id           String     @id @default(uuid())
+  universiteId String     @map("universite_id")
+  universite   Universite @relation(fields: [universiteId], references: [id])
+  nom          String
+  code         String?
+  estActif     Boolean    @default(true) @map("est_actif")
+
+  espaces      Espace[]
+  profils      Profil[]
+
+  @@unique([nom, universiteId])
+  @@map("filieres")
+}
+
+// ============================================================
+// UTILISATEURS & PROFILS
+// ============================================================
+
+model Utilisateur {
+  id          String   @id @default(uuid())
+  firebaseUid String   @unique @map("firebase_uid")
+  telephone   String?  @unique
+  email       String?  @unique
+  role        Role     @default(student)
+  estActif    Boolean  @default(true) @map("est_actif")
+  estBanni    Boolean  @default(false) @map("est_banni")
+  banniLe     DateTime? @map("banni_le")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  // Relations
+  profil              Profil?
+  espaceMembres       EspaceMembre[]
+  canalMembres        CanalMembre[]
+  messages            Message[]
+  documents           Document[]
+  verification        Verification?
+  signalements        Signalement[]        @relation("Rapporteur")
+  signalementsRecus   Signalement[]        @relation("CibleUser")
+  notifications       Notification[]
+  tokensAppareil      TokenAppareil[]
+  articlesMarche      ArticleMarche[]
+  opportunites        Opportunite[]
+  actionsModerees     ActionModeration_[]  @relation("Cible")
+  actionsModerateur   ActionModeration_[]  @relation("Moderateur")
+  verificationsAdmin  Verification[]       @relation("Admin")
+  auditLogs           AuditLog[]
+
+  @@map("utilisateurs")
+}
+
+model Profil {
+  id                  String             @id @default(uuid())
+  utilisateurId       String             @unique @map("utilisateur_id")
+  utilisateur         Utilisateur        @relation(fields: [utilisateurId], references: [id])
+  universiteId        String?            @map("universite_id")
+  universite          Universite?        @relation(fields: [universiteId], references: [id])
+  filiereId           String?            @map("filiere_id")
+  filiere             Filiere?           @relation(fields: [filiereId], references: [id])
+  prenom              String
+  nom                 String
+  avatarUrl           String?            @map("avatar_url")
+  niveau              Niveau?
+  photoCarteUrl       String?            @map("photo_carte_url")
+  statutVerification  StatutVerification @default(pending) @map("statut_verification")
+  verifiele           DateTime?          @map("verifie_le")
+  scoreReputation     Int                @default(0) @map("score_reputation")
+  createdAt           DateTime           @default(now()) @map("created_at")
+  updatedAt           DateTime           @updatedAt @map("updated_at")
+
+  @@map("profils")
+}
+
+// ============================================================
+// ESPACES & CANAUX
+// ============================================================
+
+model Espace {
+  id           String      @id @default(uuid())
+  universiteId String?     @map("universite_id")
+  universite   Universite? @relation(fields: [universiteId], references: [id])
+  filiereId    String?     @map("filiere_id")
+  filiere      Filiere?    @relation(fields: [filiereId], references: [id])
+  nom          String
+  typeEspace   String      @map("type_espace")
+  niveau       String?
+  estPublic    Boolean     @default(true) @map("est_public")
+  estActif     Boolean     @default(true) @map("est_actif")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  canaux       Canal[]
+  membres      EspaceMembre[]
+
+  @@map("espaces")
+}
+
+model EspaceMembre {
+  id            String      @id @default(uuid())
+  espaceId      String      @map("espace_id")
+  espace        Espace      @relation(fields: [espaceId], references: [id], onDelete: Cascade)
+  utilisateurId String      @map("utilisateur_id")
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  rejointLe     DateTime    @default(now()) @map("rejoint_le")
+
+  @@unique([espaceId, utilisateurId])
+  @@map("espace_membres")
+}
+
+model Canal {
+  id          String   @id @default(uuid())
+  espaceId    String   @map("espace_id")
+  espace      Espace   @relation(fields: [espaceId], references: [id], onDelete: Cascade)
+  nom         String
+  description String?
+  estPublic   Boolean  @default(true) @map("est_public")
+  estActif    Boolean  @default(true) @map("est_actif")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  membres     CanalMembre[]
+  messages    Message[]
+  documents   Document[]
+
+  @@map("canaux")
+}
+
+model CanalMembre {
+  id            String      @id @default(uuid())
+  canalId       String      @map("canal_id")
+  canal         Canal       @relation(fields: [canalId], references: [id], onDelete: Cascade)
+  utilisateurId String      @map("utilisateur_id")
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  rejointLe     DateTime    @default(now()) @map("rejoint_le")
+
+  @@unique([canalId, utilisateurId])
+  @@map("canal_membres")
+}
+
+// ============================================================
+// MESSAGES & DOCUMENTS
+// ============================================================
+
+model Message {
+  id             String      @id @default(uuid())
+  canalId        String      @map("canal_id")
+  canal          Canal       @relation(fields: [canalId], references: [id])
+  auteurId       String      @map("auteur_id")
+  auteur         Utilisateur @relation(fields: [auteurId], references: [id])
+  parentId       String?     @map("parent_id")
+  parent         Message?    @relation("Reponses", fields: [parentId], references: [id])
+  reponses       Message[]   @relation("Reponses")
+  type           TypeMessage
+  contenu        String
+  estEpingle     Boolean     @default(false) @map("est_epingle")
+  estMasque      Boolean     @default(false) @map("est_masque")
+  votesPositifs  Int         @default(0) @map("votes_positifs")
+  estAnonyme     Boolean     @default(false) @map("est_anonyme")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  deletedAt      DateTime?   @map("deleted_at")
+
+  signalements   Signalement[]
+
+  @@map("messages")
+}
+
+model Document {
+  id                 String      @id @default(uuid())
+  canalId            String?     @map("canal_id")
+  canal              Canal?      @relation(fields: [canalId], references: [id])
+  uploaderId         String      @map("uploader_id")
+  uploader           Utilisateur @relation(fields: [uploaderId], references: [id])
+  titre              String
+  description        String?
+  typeFichier        TypeFichier @map("type_fichier")
+  urlFichier         String      @map("url_fichier")
+  mimeType           String      @map("mime_type")
+  tailleOctets       Int         @map("taille_octets")
+  nbTelechargements  Int         @default(0) @map("nb_telechargements")
+  estPublic          Boolean     @default(true) @map("est_public")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+  deletedAt          DateTime?   @map("deleted_at")
+
+  signalements       Signalement[]
+
+  @@map("documents")
+}
+
+// ============================================================
+// OPPORTUNITÉS
+// ============================================================
+
+model Opportunite {
+  id            String       @id @default(uuid())
+  auteurId      String       @map("auteur_id")
+  auteur        Utilisateur  @relation(fields: [auteurId], references: [id])
+  titre         String
+  description   String
+  entreprise    String?
+  typeOffre     TypeOffre    @map("type_offre")
+  domaine       String?
+  niveauRequis  NiveauRequis @default(tous) @map("niveau_requis")
+  dateLimite    DateTime?    @map("date_limite")
+  localisation  String?
+  urlExterne    String?      @map("url_externe")
+  estActive     Boolean      @default(true) @map("est_active")
+  estExpiree    Boolean      @default(false) @map("est_expiree")
+  nbVues        Int          @default(0) @map("nb_vues")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  tags          OpportuniteTag[]
+  signalements  Signalement[]
+
+  @@map("opportunites")
+}
+
+model OpportuniteTag {
+  id            String      @id @default(uuid())
+  opportuniteId String      @map("opportunite_id")
+  opportunite   Opportunite @relation(fields: [opportuniteId], references: [id], onDelete: Cascade)
+  tag           String
+
+  @@index([opportuniteId])
+  @@index([tag])
+  @@map("opportunite_tags")
+}
+
+// ============================================================
+// VÉRIFICATION, MODÉRATION, SIGNALEMENT
+// ============================================================
+
+model Verification {
+  id            String             @id @default(uuid())
+  utilisateurId String             @unique @map("utilisateur_id")
+  utilisateur   Utilisateur        @relation(fields: [utilisateurId], references: [id])
+  photoCarteUrl String             @map("photo_carte_url")
+  statut        StatutVerification @default(pending)
+  soumisLe      DateTime           @default(now()) @map("soumis_le")
+  decideLe      DateTime?          @map("decide_le")
+  adminId       String?            @map("admin_id")
+  admin         Utilisateur?       @relation("Admin", fields: [adminId], references: [id])
+  motifRejet    String?            @map("motif_rejet")
+
+  @@map("verifications")
+}
+
+model Signalement {
+  id            String            @id @default(uuid())
+  rapporteurId  String            @map("rapporteur_id")
+  rapporteur    Utilisateur       @relation("Rapporteur", fields: [rapporteurId], references: [id])
+  cibleUserId   String?           @map("cible_user_id")
+  cibleUser     Utilisateur?      @relation("CibleUser", fields: [cibleUserId], references: [id])
+  messageId     String?           @map("message_id")
+  message       Message?          @relation(fields: [messageId], references: [id])
+  documentId    String?           @map("document_id")
+  document      Document?         @relation(fields: [documentId], references: [id])
+  opportuniteId String?           @map("opportunite_id")
+  opportunite   Opportunite?      @relation(fields: [opportuniteId], references: [id])
+  raison        RaisonSignalement
+  details       String?
+  statut        StatutSignalement @default(ouvert)
+  resoluLe      DateTime?         @map("resolu_le")
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  @@map("signalements")
+}
+
+model ActionModeration_ {
+  id           String           @id @default(uuid())
+  moderateurId String           @map("moderateur_id")
+  moderateur   Utilisateur      @relation("Moderateur", fields: [moderateurId], references: [id])
+  cibleId      String           @map("cible_id")
+  cible        Utilisateur      @relation("Cible", fields: [cibleId], references: [id])
+  action       ActionModeration
+  raison       String
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@map("actions_moderation")
+}
+
+// ============================================================
+// NOTIFICATIONS & TOKENS
+// ============================================================
+
+model Notification {
+  id            String           @id @default(uuid())
+  utilisateurId String           @map("utilisateur_id")
+  utilisateur   Utilisateur      @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  type          TypeNotification
+  titre         String
+  corps         String
+  donnees       Json?
+  estLue        Boolean          @default(false) @map("est_lue")
+  lueLe         DateTime?        @map("lue_le")
+  createdAt     DateTime         @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+
+model TokenAppareil {
+  id            String      @id @default(uuid())
+  utilisateurId String      @map("utilisateur_id")
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  token         String      @unique
+  plateforme    String      // 'android' | 'ios' | 'web'
+  estActif      Boolean     @default(true) @map("est_actif")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@map("tokens_appareil")
+}
+
+// ============================================================
+// JOBS (file de tâches sans Redis)
+// ============================================================
+
+model Job {
+  id            String    @id @default(uuid())
+  type          TypeJob
+  statut        StatutJob @default(pending)
+  payload       Json
+  tentatives    Int       @default(0)
+  maxTentatives Int       @default(3) @map("max_tentatives")
+  derniereErreur String?  @map("derniere_erreur")
+  prevuLe       DateTime  @default(now()) @map("prevu_le")
+  traiteLe      DateTime? @map("traite_le")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@map("jobs")
+}
+
+// ============================================================
+// AUDIT LOGS
+// ============================================================
+
+model AuditLog {
+  id            String      @id @default(uuid())
+  utilisateurId String?     @map("utilisateur_id")
+  utilisateur   Utilisateur? @relation(fields: [utilisateurId], references: [id])
+  action        String
+  ressource     String
+  ressourceId   String?     @map("ressource_id")
+  metadata      Json?
+  ip            String?
+  userAgent     String?     @map("user_agent")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+// ============================================================
+// IPs BLOQUÉES
+// ============================================================
+
+model IpBloquee {
+  id        String    @id @default(uuid())
+  ip        String    @unique
+  raison    String?
+  bloqueLe  DateTime  @default(now()) @map("bloque_le")
+  expireLe  DateTime? @map("expire_le")
+
+  @@map("ips_bloques")
+}
+
+// ============================================================
+// MARKETPLACE (Phase 2)
+// ============================================================
+
+model ArticleMarche {
+  id          String         @id @default(uuid())
+  vendeurId   String         @map("vendeur_id")
+  vendeur     Utilisateur    @relation(fields: [vendeurId], references: [id])
+  titre       String
+  description String
+  prix        Decimal?
+  categorie   CategorieMarche
+  statut      StatutArticle  @default(actif)
+  imagesUrls  String[]       @map("images_urls")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  deletedAt   DateTime?      @map("deleted_at")
+
+  @@map("articles_marche")
+}
