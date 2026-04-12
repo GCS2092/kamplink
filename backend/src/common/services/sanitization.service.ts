@@ -4,9 +4,7 @@ import DOMPurify from 'isomorphic-dompurify';
 @Injectable()
 export class SanitizationService {
   private readonly allowedTags = ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li', 'a'];
-  private readonly allowedAttributes = {
-    'a': ['href', 'title'],
-  };
+  private readonly allowedAttributes = ['href', 'title'];
 
   /**
    * Sanitize HTML content to prevent XSS attacks
@@ -35,31 +33,33 @@ export class SanitizationService {
   /**
    * Sanitize object properties recursively
    */
-  sanitizeObject<T extends Record<string, any>>(obj: T): T {
-    const sanitized = { ...obj };
+  sanitizeObject(obj: Record<string, any>): Record<string, any> {
+    const sanitized: Record<string, any> = {};
     
-    for (const key of Object.keys(sanitized)) {
-      const value = sanitized[key];
+    for (const key of Object.keys(obj)) {
+      const value = obj[key];
       
       if (typeof value === 'string') {
         // Sanitize string fields that might contain HTML
         if (this.isHtmlField(key)) {
-          sanitized[key] = this.sanitizeHtml(value) as any;
+          sanitized[key] = this.sanitizeHtml(value);
         } else {
-          sanitized[key] = this.sanitizePlainText(value) as any;
+          sanitized[key] = this.sanitizePlainText(value);
         }
       } else if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value)) {
           sanitized[key] = value.map(item => 
             typeof item === 'string' 
               ? this.sanitizePlainText(item)
-              : typeof item === 'object' 
+              : typeof item === 'object' && item !== null
                 ? this.sanitizeObject(item)
                 : item
-          ) as any;
+          );
         } else {
           sanitized[key] = this.sanitizeObject(value);
         }
+      } else {
+        sanitized[key] = value;
       }
     }
     

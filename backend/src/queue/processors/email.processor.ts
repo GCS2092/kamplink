@@ -1,13 +1,13 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import * as Bull from 'bull';
 
 @Processor('emails')
 export class EmailProcessor {
   private readonly logger = new Logger(EmailProcessor.name);
 
   @Process('send')
-  async handleEmail(job: Job<{
+  async handleEmail(job: Bull.Job<{
     to: string;
     subject: string;
     template: string;
@@ -42,7 +42,7 @@ export class EmailProcessor {
   }
 
   @Process('generate')
-  async handleExport(job: Job<{
+  async handleExport(job: Bull.Job<{
     userId: string;
     type: string;
     filters?: Record<string, any>;

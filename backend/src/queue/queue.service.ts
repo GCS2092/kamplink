@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import * as Bull from 'bull';
 
 @Injectable()
 export class QueueService {
   private readonly logger = new Logger(QueueService.name);
 
   constructor(
-    @InjectQueue('notifications') private notificationQueue: Queue,
-    @InjectQueue('emails') private emailQueue: Queue,
-    @InjectQueue('exports') private exportQueue: Queue,
+    @InjectQueue('notifications') private notificationQueue: Bull.Queue,
+    @InjectQueue('emails') private emailQueue: Bull.Queue,
+    @InjectQueue('exports') private exportQueue: Bull.Queue,
   ) {}
 
   // ─────────────────────────────────────────
@@ -125,7 +125,7 @@ export class QueueService {
     };
   }
 
-  private async getQueueStats(queue: Queue) {
+  private async getQueueStats(queue: Bull.Queue) {
     const [waiting, active, completed, failed] = await Promise.all([
       queue.getWaitingCount(),
       queue.getActiveCount(),

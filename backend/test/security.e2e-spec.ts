@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 
@@ -30,7 +30,7 @@ describe('Security Features (e2e)', () => {
 
   describe('Rate Limiting', () => {
     it('should block after 5 failed login attempts per minute', async () => {
-      const responses = [];
+      const responses: number[] = [];
       
       // 6 requêtes rapides
       for (let i = 0; i < 6; i++) {
@@ -48,7 +48,7 @@ describe('Security Features (e2e)', () => {
     });
 
     it('should limit forgot-password to 3 requests per minute', async () => {
-      const responses = [];
+      const responses: number[] = [];
       
       for (let i = 0; i < 4; i++) {
         const res = await request(app.getHttpServer())

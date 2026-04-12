@@ -4,7 +4,7 @@ import { AuthGuard } from './auth.guard';
 import { SecurityService } from '../security/security.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { Throttle } from '@nestjs/throttler';
+import { Throttle } from '../redis/redis-throttler.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +18,7 @@ export class AuthController {
   // ─────────────────────────────────────────
 
   @Post('login')
-  @Throttle(5, 60) // 5 tentatives par minute max
+  @Throttle({ ttl: 60, limit: 5, blockDuration: 900 }) // 5 tentatives par minute, bloc 15min
   async login(
     @Body() body: { idToken: string },
     @Ip() ip: string,
@@ -78,7 +78,7 @@ export class AuthController {
   // ─────────────────────────────────────────
 
   @Post('forgot-password')
-  @Throttle(3, 60) // 3 demandes max par minute
+  @Throttle({ ttl: 60, limit: 3, blockDuration: 600 }) // 3 demandes par minute, bloc 10min
   async forgotPassword(@Body() dto: ForgotPasswordDto) {
     // Note: Avec Firebase Auth, la réinitialisation se fait via Firebase
     // mais on enregistre la demande pour audit
@@ -101,7 +101,7 @@ export class AuthController {
   // ─────────────────────────────────────────
 
   @Post('reset-password')
-  @Throttle(5, 60) // 5 tentatives max par minute
+  @Throttle({ ttl: 60, limit: 5, blockDuration: 300 }) // 5 tentatives par minute, bloc 5min
   async resetPassword(@Body() dto: ResetPasswordDto) {
     // Valider le token
     const userId = await this.securityService.validatePasswordResetToken(dto.token);

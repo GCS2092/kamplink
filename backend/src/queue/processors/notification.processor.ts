@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import * as Bull from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FirebaseService } from '../../firebase/firebase.service';
 
@@ -14,7 +14,7 @@ export class NotificationProcessor {
   ) {}
 
   @Process('send')
-  async handleNotification(job: Job<{
+  async handleNotification(job: Bull.Job<{
     userId: string;
     type: string;
     title: string;

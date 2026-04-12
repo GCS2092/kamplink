@@ -17,6 +17,7 @@ import { ChatModule } from './chat/chat.module';
 import { QueueModule } from './queue/queue.module';
 import { SearchModule } from './search/search.module';
 import { CommonModule } from './common/common.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { CommonModule } from './common/common.module';
     // Modules Globaux
     FirebaseModule,
     PrismaModule,
+    RedisModule,        // Redis Upstash - cache + sécurité
     SecurityModule,
     CommonModule,
     SearchModule,

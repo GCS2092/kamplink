@@ -1,6 +1,6 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Logger } from '@nestjs/common';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FirebaseService } from '../../firebase/firebase.service';
 
@@ -24,7 +24,6 @@ export class NotificationProcessor {
     const { userId, type, title, body, data } = job.data;
 
     try {
-      // 1. Create notification in database
       await this.prisma.notification.create({
         data: {
           utilisateurId: userId,
@@ -35,43 +34,28 @@ export class NotificationProcessor {
         },
       });
 
-      // 2. Get user's device tokens
       const tokens = await this.prisma.tokenAppareil.findMany({
-        where: {
-          utilisateurId: userId,
-          estActif: true,
-        },
+        where: { utilisateurId: userId, estActif: true },
         select: { token: true },
       });
 
-      // 3. Send push notification if tokens exist
       if (tokens.length > 0) {
         const tokenList = tokens.map(t => t.token);
-        
+
         if (tokenList.length === 1) {
-          await this.firebase.sendPushNotification({
-            token: tokenList[0],
-            title,
-            body,
-            data,
-          });
+          await this.firebase.sendPushNotification({ token: tokenList[0], title, body, data });
         } else {
-          await this.firebase.sendMulticast({
-            tokens: tokenList,
-            title,
-            body,
-            data,
-          });
+          await this.firebase.sendMulticast({ tokens: tokenList, title, body, data });
         }
       }
 
       this.logger.log(`Notification sent to user ${userId}`);
     } catch (error) {
       this.logger.error(
-        `Failed to send notification to user ${userId}: ${error.message}`,
-        error.stack,
+        `Failed to send notification to user ${userId}: ${(error as Error).message}`,
+        (error as Error).stack,
       );
-      throw error; // Re-queue the job
+      throw error;
     }
   }
 }
