@@ -1,10 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { ValidationPipe, VersioningType, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
+import * as Sentry from '@sentry/nestjs';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { ResponseTransformInterceptor } from './common/interceptors/response-transform.interceptor';
 
 async function bootstrap() {
+  // Initialize Sentry
+  const sentryDsn = process.env.SENTRY_DSN;
+  if (sentryDsn) {
+    Sentry.init({
+      dsn: sentryDsn,
+      environment: process.env.NODE_ENV || 'development',
+      tracesSampleRate: 1.0,
+      profilesSampleRate: 1.0,
+    });
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // ─────────────────────────────────────────
@@ -44,6 +59,21 @@ async function bootstrap() {
   );
 
   // ─────────────────────────────────────────
+  // EXCEPTION FILTER GLOBAL
+  // ─────────────────────────────────────────
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // ─────────────────────────────────────────
+  // LOGGING INTERCEPTOR
+  // ─────────────────────────────────────────
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // ─────────────────────────────────────────
+  // RESPONSE TRANSFORM INTERCEPTOR
+  // ─────────────────────────────────────────
+  app.useGlobalInterceptors(new ResponseTransformInterceptor());
+
+  // ─────────────────────────────────────────
   // SWAGGER DOCUMENTATION
   // ─────────────────────────────────────────
   const config = new DocumentBuilder()
@@ -74,7 +104,16 @@ async function bootstrap() {
   // ─────────────────────────────────────────
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
-  console.log(`🚀 CampusLink API démarrée sur http://localhost:${port}`);
-  console.log(`📚 Documentation Swagger: http://localhost:${port}/api/docs`);
+  
+  const logger = new Logger('Bootstrap');
+  logger.log(`🚀 CampusLink API démarrée sur http://localhost:${port}`);
+  logger.log(`📚 Documentation Swagger: http://localhost:${port}/api/docs`);
+
+  // Graceful shutdown
+  process.on('SIGTERM', async () => {
+    logger.log('SIGTERM received - closing server gracefully');
+    await app.close();
+    process.exit(0);
+  });
 }
 bootstrap();

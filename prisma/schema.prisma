@@ -203,6 +203,8 @@ model Utilisateur {
   actionsModerateur   ActionModeration_[]  @relation("Moderateur")
   verificationsAdmin  Verification[]       @relation("Admin")
   auditLogs           AuditLog[]
+  tentativesConnexion TentativeConnexion[]
+  tokensResetPassword TokenResetPassword[]
 
   @@map("utilisateurs")
 }
@@ -512,6 +514,54 @@ model AuditLog {
 }
 
 // ============================================================
+// SÉCURITÉ : TENTATIVES DE CONNEXION
+// ============================================================
+
+model TentativeConnexion {
+  id            String      @id @default(uuid())
+  utilisateurId String?     @map("utilisateur_id")
+  utilisateur   Utilisateur? @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  telephone     String?
+  ip            String
+  userAgent     String?     @map("user_agent")
+  statut        StatutTentative
+  nbEchecs      Int         @default(1) @map("nb_echecs")
+  bloqueJusqua  DateTime?   @map("bloque_jusqua")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  @@index([utilisateurId])
+  @@index([telephone])
+  @@index([ip])
+  @@index([statut])
+  @@map("tentatives_connexion")
+}
+
+enum StatutTentative {
+  reussi
+  echoue
+  bloque
+}
+
+// ============================================================
+// SÉCURITÉ : TOKENS RÉINITIALISATION MOT DE PASSE
+// ============================================================
+
+model TokenResetPassword {
+  id            String      @id @default(uuid())
+  utilisateurId String      @map("utilisateur_id")
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade)
+  token         String      @unique
+  expireLe      DateTime    @map("expire_le")
+  utiliseLe     DateTime?   @map("utilise_le")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  @@index([utilisateurId])
+  @@index([token])
+  @@map("tokens_reset_password")
+}
+
+// ============================================================
 // IPs BLOQUÉES
 // ============================================================
 
@@ -521,6 +571,8 @@ model IpBloquee {
   raison    String?
   bloqueLe  DateTime  @default(now()) @map("bloque_le")
   expireLe  DateTime? @map("expire_le")
+  nbRequetes Int     @default(1) @map("nb_requetes")
+  derniereRequete DateTime @default(now()) @map("derniere_requete")
 
   @@map("ips_bloques")
 }

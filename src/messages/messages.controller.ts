@@ -10,6 +10,7 @@ import {
   UseGuards,
   Query,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { MessagesService } from './messages.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -18,6 +19,7 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 import { VoteMessageDto } from './dto/vote-message.dto';
 
+@ApiTags('Messages')
 @Controller('messages')
 export class MessagesController {
   constructor(private messagesService: MessagesService) {}
@@ -27,6 +29,12 @@ export class MessagesController {
   // ─────────────────────────────────────────
 
   @Get('canal/:id')
+  @ApiOperation({ summary: 'Récupérer les messages d\'un canal' })
+  @ApiParam({ name: 'id', description: 'ID du canal' })
+  @ApiQuery({ name: 'page', required: false, description: 'Numéro de page', example: '1' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Messages par page', example: '50' })
+  @ApiResponse({ status: 200, description: 'Liste des messages paginée' })
+  @ApiResponse({ status: 404, description: 'Canal introuvable' })
   getMessagesByCanal(
     @Param('id') canalId: string,
     @Query('page') page?: string,
@@ -40,6 +48,10 @@ export class MessagesController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Récupérer un message par ID' })
+  @ApiParam({ name: 'id', description: 'ID du message' })
+  @ApiResponse({ status: 200, description: 'Message trouvé' })
+  @ApiResponse({ status: 404, description: 'Message introuvable' })
   getMessageById(@Param('id') messageId: string) {
     return this.messagesService.getMessageById(messageId);
   }
@@ -70,6 +82,11 @@ export class MessagesController {
 
   @Post()
   @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Créer un nouveau message' })
+  @ApiResponse({ status: 201, description: 'Message créé' })
+  @ApiResponse({ status: 401, description: 'Non authentifié' })
+  @ApiResponse({ status: 403, description: 'Accès interdit au canal' })
   createMessage(@Request() req, @Body() dto: CreateMessageDto) {
     return this.messagesService.createMessage(req.user.id, dto);
   }

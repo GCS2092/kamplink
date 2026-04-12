@@ -12,6 +12,11 @@ import { OpportunitesModule } from './opportunites/opportunites.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SignalementsModule } from './signalements/signalements.module';
 import { HealthModule } from './health/health.module';
+import { SecurityModule } from './security/security.module';
+import { ChatModule } from './chat/chat.module';
+import { QueueModule } from './queue/queue.module';
+import { SearchModule } from './search/search.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -28,6 +33,10 @@ import { HealthModule } from './health/health.module';
     // Modules Globaux
     FirebaseModule,
     PrismaModule,
+    SecurityModule,
+    CommonModule,
+    SearchModule,
+    QueueModule,
 
     // Modules Métier
     AuthModule,
@@ -39,6 +48,7 @@ import { HealthModule } from './health/health.module';
     OpportunitesModule,
     NotificationsModule,
     SignalementsModule,
+    ChatModule,
 
     // Monitoring
     HealthModule,

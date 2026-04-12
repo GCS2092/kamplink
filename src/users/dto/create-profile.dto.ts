@@ -1,4 +1,4 @@
-import { IsString, IsIn } from 'class-validator';
+import { IsString, IsIn, IsUUID } from 'class-validator';
 
 export class CreateProfileDto {
   @IsString()
@@ -10,9 +10,9 @@ export class CreateProfileDto {
   @IsIn(['L1', 'L2', 'L3', 'M1', 'M2'])
   niveau!: 'L1' | 'L2' | 'L3' | 'M1' | 'M2';
 
-  @IsString()
+  @IsUUID()
   universiteId!: string;
 
-  @IsString()
+  @IsUUID()
   filiereId!: string;
 }

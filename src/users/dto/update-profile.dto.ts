@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsIn, IsUrl } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsUrl, IsUUID } from 'class-validator';
 
 export class UpdateProfileDto {
   @IsOptional()
@@ -14,11 +14,11 @@ export class UpdateProfileDto {
   niveau?: 'L1' | 'L2' | 'L3' | 'M1' | 'M2';
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   universiteId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsUUID()
   filiereId?: string;
 
   @IsOptional()

@@ -253,33 +253,36 @@ export class MessagesService {
   // ─────────────────────────────────────────
 
   async voteMessage(userId: string, messageId: string, vote: 'up' | 'down') {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
-    if (!message) throw new NotFoundException('Message introuvable');
-
-    // Pas de vote sur ses propres messages
-    if (message.auteurId === userId) {
-      throw new ForbiddenException('Vous ne pouvez pas voter pour vos propres messages');
-    }
-
-    if (vote === 'up') {
-      // Incrémenter le score de réputation de l'auteur
-      await this.prisma.profil.update({
-        where: { utilisateurId: message.auteurId },
-        data: { scoreReputation: { increment: 1 } },
-      });
-
-      return this.prisma.message.update({
+    // Use transaction to ensure atomicity
+    return this.prisma.$transaction(async (tx) => {
+      const message = await tx.message.findUnique({
         where: { id: messageId },
-        data: { votesPositifs: { increment: 1 } },
       });
-    }
+      if (!message) throw new NotFoundException('Message introuvable');
 
-    // Downvote - on ne diminue pas la réputation pour l'instant
-    return this.prisma.message.update({
-      where: { id: messageId },
-      data: { votesPositifs: { decrement: 1 } },
+      // Pas de vote sur ses propres messages
+      if (message.auteurId === userId) {
+        throw new ForbiddenException('Vous ne pouvez pas voter pour vos propres messages');
+      }
+
+      if (vote === 'up') {
+        // Incrémenter le score de réputation de l'auteur
+        await tx.profil.update({
+          where: { utilisateurId: message.auteurId },
+          data: { scoreReputation: { increment: 1 } },
+        });
+
+        return tx.message.update({
+          where: { id: messageId },
+          data: { votesPositifs: { increment: 1 } },
+        });
+      }
+
+      // Downvote - on ne diminue pas la réputation pour l'instant
+      return tx.message.update({
+        where: { id: messageId },
+        data: { votesPositifs: { decrement: 1 } },
+      });
     });
   }
 
