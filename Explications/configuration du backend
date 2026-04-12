@@ -1,0 +1,63 @@
+Parfait, bonne progression ! Voici d'abord une vue d'ensemble claire de où tu en es et où tu vas.
+
+---
+
+## Ce qu'on a fait
+
+**PostgreSQL + Prisma** → la base de données de ton app est prête. Toutes tes tables existent. Prisma est le pont entre ton code NestJS et cette base.
+
+---
+
+## Ce qu'on va faire avec Firebase
+
+Firebase va jouer **deux rôles distincts** dans kamplink :
+
+| Rôle | Service Firebase | Ce que ça fait |
+|------|-----------------|----------------|
+| 🔐 Authentification | **Firebase Auth** | Envoie l'OTP SMS, gère les sessions, génère les tokens JWT |
+| 📱 Notifications push | **Firebase FCM** | Envoie les notifs sur les téléphones Android/iOS |
+
+Firebase ne stocke **aucune donnée métier** — juste les identités auth. Tout le reste est dans ton PostgreSQL.
+
+---
+
+## Les 4 étapes qu'on va faire
+
+```
+Étape 1 — Créer le projet Firebase Console (navigateur)
+         ↓
+Étape 2 — Installer Firebase Admin SDK dans NestJS
+         ↓
+Étape 3 — Configurer l'auth (vérification OTP/token dans NestJS)
+         ↓
+Étape 4 — Configurer FCM (notifications push)
+```
+
+---
+
+## Étape 1 — Créer le projet Firebase (à faire toi dans le navigateur)
+
+1. Va sur **console.firebase.google.com**
+2. Clique **"Ajouter un projet"**
+3. Nom du projet : `kamplink`
+4. Désactive Google Analytics (pas utile pour toi)
+5. Une fois créé, dans le menu gauche :
+   - Clique **"Authentication"** → **"Commencer"** → active **"Téléphone"** (c'est l'OTP SMS)
+
+6. Ensuite tu as besoin de la **clé de service admin** :
+   - Roue dentée ⚙️ → **"Paramètres du projet"** → onglet **"Comptes de service"**
+   - Clique **"Générer une nouvelle clé privée"**
+   - Télécharge le fichier JSON — garde-le précieusement, **ne le commit jamais sur Git**
+
+---
+R : tout de facon organisee
+
+13:41
+Bonne décision — on fait tout dans le bon ordre. Voici l'ordre logique :
+
+1. Utilisateurs & Profils    ← base de tout, chaque module en dépend
+2. Espaces & Canaux          ← structure de la communauté
+3. Documents                 ← partage dans les canaux
+4. Opportunités              ← indépendant, plus simple
+5. Notifications             ← dépend de tout le reste
+6. Modération & Signalements ← en dernier, transversal

@@ -1,0 +1,17 @@
+Ce qui est fait ici :
+
+Diagramme de cas d'utilisation — les 4 acteurs (Étudiant, Entreprise, Admin, Délégué) et tous leurs cas d'usage avec les relations
+Diagramme de classes — toutes les entités avec leurs attributs typés et les multiplicités des associations
+Diagramme de séquence — le flux complet d'inscription et vérification d'un étudiant
+MCD (Modèle Conceptuel de Données) — les entités, attributs, cardinalités 1,1 / 1,N / 0,N
+Architecture technique — les 4 couches (Présentation, API Gateway, Services Métier, Données) avec le stack complet
+Wireframe mobile — l'écran d'accueil annoté avec les composants UI
+
+
+Ce qu'on peut encore produire pour compléter ta soutenance :
+
+Le MLD (Modèle Logique de Données — les tables SQL avec clés primaires et étrangères)
+D'autres diagrammes de séquence (partage de document, consultation d'opportunité)
+Un wireframe de l'écran Communauté ou Opportunités
+Le cahier des charges complet en texte structuré
+La documentation fonctionnelle détaillée par fonctionnalité

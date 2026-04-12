@@ -1,0 +1,38 @@
+Fonctionnalités Détaillées
+1. Le Profil Académique Vérifié
+C'est la pièce centrale de tout le système. Sans profil vérifié, kamplink n'est qu'un réseau social de plus.
+Processus d'inscription :
+L'étudiant s'inscrit avec son numéro de téléphone. Il renseigne son université, sa filière et son niveau. Il soumet une photo de sa carte étudiante. La vérification est manuelle au lancement et prend 24 à 48 heures. Une fois validé, son profil affiche un badge vérifié visible par toute la communauté.
+Trois niveaux de vérification :
+Le niveau 1 concerne les écoles disposant d'un email universitaire — vérification automatique par email, badge "vérifié email". Le niveau 2 couvre la grande majorité des universités sénégalaises — photo de carte étudiante, vérification manuelle puis semi-automatique, badge "étudiant vérifié". Le niveau 3 correspond aux profils non vérifiés — accès en lecture seule, impossibilité de poster dans les espaces protégés.
+Contenu du profil :
+Nom, université, filière, niveau, badge de vérification, documents partagés avec la communauté, score de réputation basé sur les contributions, historique des opportunités consultées.
+Ce que ça empêche : les faux comptes, les adultes non étudiants, les spammeurs.
+
+2. Les Espaces Communautaires Structurés
+C'est la réponse directe au chaos des groupes WhatsApp. La différence fondamentale : les fichiers ne disparaissent pas, ils sont organisés et retrouvables.
+Attribution automatique :
+À l'inscription, l'étudiant est automatiquement intégré aux espaces correspondant à son profil : espace de son université, espace de sa filière, espace de son niveau. Il peut rejoindre manuellement des espaces supplémentaires par matière ou centre d'intérêt académique.
+Structure de chaque espace — 4 canaux séparés :
+Le canal Annonces est réservé aux délégués et administrateurs. Le canal Cours et Documents accueille les PDF, résumés et fiches de révision, organisés par matière et niveau, permanents et recherchables. Le canal Questions & Réponses permet à chaque étudiant de poser des questions — les réponses sont notées par la communauté et les meilleures remontent automatiquement, elles sont sauvegardées et retrouvables dans l'historique complet. Le canal Discussion Libre est ouvert à toutes les conversations de la filière.
+
+3. L'Agrégateur d'Opportunités
+Trois sources d'alimentation :
+En premier, les offres agrégées manuellement par l'équipe kamplink depuis des sources externes vérifiées (LinkedIn, sites d'entreprises, pages institutionnelles). En deuxième, les offres postées directement par les entreprises partenaires. En troisième, les opportunités partagées par les étudiants eux-mêmes depuis des sources externes.
+Système de tags :
+Chaque opportunité est catégorisée par type (stage, emploi, bourse, concours), domaine (informatique, droit, médecine, gestion, etc.), niveau requis (L1 à Master), date limite, et localisation (pays ou ville).
+Profil de recherche unique :
+L'étudiant configure ses préférences une seule fois. Il ne reçoit ensuite que les opportunités correspondant exactement à son profil. Plus de noyade dans des offres non pertinentes.
+Contrôle qualité :
+Chaque offre a une date de validité — les offres expirées sont archivées automatiquement. Les utilisateurs peuvent signaler une offre douteuse. Les offres signalées sont vérifiées avant d'être retirées ou maintenues. Une seule offre frauduleuse peut détruire la confiance — tout est vérifié manuellement au lancement.
+
+4. La Marketplace Étudiante
+Disponible en Phase 3. Espace d'échanges de services et de produits entre étudiants vérifiés uniquement : cours particuliers, vente de livres et supports de cours, services entre pairs. Commission de 3 à 5% sur les transactions. L'accès réservé aux profils vérifiés garantit la sécurité des échanges.
+
+Stratégie de Lancement — 3 Phases
+Phase 1 — Mois 1 à 6 : Le Cheval de Troie
+Une université, une filière. Profil académique vérifié. Groupes par filière structurés. Partage de cours et résumés. Opportunités agrégées manuellement. L'objectif est de créer une habitude irremplaçable dans un périmètre restreint avant d'élargir.
+Phase 2 — Mois 6 à 18 : La Communauté
+Expansion à d'autres universités sénégalaises. Annonces officielles des kamplink intégrées. Système de questions-réponses avec réputation actif. Les entreprises postent directement leurs offres. Partenariats institutionnels signés. Premières offres sponsorisées et abonnements entreprises.
+Phase 3 — Mois 18 à 36 : La Référence
+Marketplace étudiante vérifiée. Réseau alumni actif. Expansion en Afrique francophone. API pour universités partenaires. Monétisation complète.

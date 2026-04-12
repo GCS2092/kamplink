@@ -1,0 +1,23 @@
+kamplink — Documentation Produit Complète
+Vision & Positionnement
+kamplink est une plateforme numérique mobile et web conçue exclusivement pour les étudiants africains francophones.
+ Son objectif est de centraliser en un seul endroit tout ce dont un étudiant a besoin académiquement : son identité vérifiée, sa communauté de filière, ses ressources de cours, et ses opportunités professionnelles adaptées à son niveau.
+Le problème que kamplink résout n'est pas abstrait.
+ Aujourd'hui un étudiant de L2 à Dakar cherche ses cours sur WhatsApp où les fichiers disparaissent, cherche ses stages sur des groupes Facebook non filtrés, et n'a aucun espace numérique qui reflète son identité académique réelle. kamplink comble ce vide que LinkedIn, WhatsApp et Instagram ne peuvent pas combler parce qu'ils n'ont pas été conçus pour ça.
+
+Principes de Design Non Négociables
+Simplicité absolue. Chaque fonctionnalité ajoutée doit résoudre un problème réel de l'étudiant. Si elle complique l'interface sans apporter de valeur concrète, elle n'existe pas.
+5 onglets maximum dans la navigation principale : Accueil, Communauté, Opportunités, Marketplace, Profil. Tout le reste est accessible depuis ces 5 entrées.
+2 clics maximum pour atteindre n'importe quelle fonctionnalité depuis l'accueil. Au-delà, la fonctionnalité est soit remontée, soit supprimée.
+Design léger pour réseau lent. La majorité des étudiants sénégalais utilisent la 3G ou des forfaits limités. Pas de vidéos en lecture automatique, pas d'images lourdes inutiles, mode économie de données disponible. L'application doit être fluide sur un téléphone d'entrée de gamme avec une connexion faible.
+Notifications rares et utiles. Uniquement pour des événements qui nécessitent une action : nouvelle offre dans sa filière, réponse à sa question, annonce urgente du kamplink, message direct. Aucune notification pour les likes ou commentaires.
+
+Architecture de l'Application
+Plateforme
+L'application existe sur deux surfaces : mobile natif (Android prioritaire, iOS secondaire) et web responsive. Le mobile est la surface principale car c'est le premier écran de l'étudiant africain. Le web sert pour les usages sur ordinateur en salle informatique ou à domicile.
+Navigation Principale
+Accueil — Fil personnalisé dès l'ouverture. L'étudiant voit immédiatement les annonces de sa filière, les nouvelles opportunités correspondant à son niveau, et les documents récemment partagés dans ses groupes. Pas un fil générique.
+Communauté — Accès aux espaces structurés par université, filière, niveau et matière.
+Opportunités — Agrégateur filtré de stages, emplois, bourses et concours.
+Marketplace — Espace d'échanges et de services entre étudiants vérifiés.
+Profil — Identité académique vérifiée, documents partagés, score de réputation, historique.

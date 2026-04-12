@@ -1,0 +1,153 @@
+Parfait. Voici ton plan complet du début à la fin, calibré pour une petite équipe qui code, avec un budget serré.
+
+---
+
+# kamplink — Plan d'Exécution Complet
+
+---
+
+## ÉTAPE 0 — Validation avant de coder (Semaines 1 à 2)
+
+C'est l'étape que la plupart des fondateurs sautent et regrettent. Tu ne touches pas au code avant d'avoir fait ça.
+
+**Ce que tu fais concrètement :**
+
+Tu interviewes 20 étudiants en face à face, idéalement à l'UCAD. Une seule question centrale : comment tu trouves tes cours, tes stages, tes infos de filière aujourd'hui, et qu'est-ce qui te frustre le plus ? Tu écoutes, tu ne pitches pas. Tu notes tout.
+
+Tu crées une landing page en 1 journée (Carrd.co ou Notion suffit) qui explique kamplink en 3 lignes et collecte des emails. Tu la partages dans 3 groupes WhatsApp d'étudiants. Si tu n'as pas 100 inscrits en une semaine, ton message n'est pas bon — tu le reformules.
+
+Tu identifies les délégués d'une filière cible. Ce sont tes futurs ambassadeurs. Tu leur parles, tu leur demandes ce qu'ils feraient différemment si un outil existait.
+
+**Ce que ça te donne :** la certitude que tu construis quelque chose que les gens veulent vraiment, et tes 50 premiers utilisateurs avant même le lancement.
+
+---
+
+## ÉTAPE 1 — Construire le MVP (Semaines 3 à 10)
+
+### Ce qu'est un vrai MVP pour kamplink
+
+Le MVP n'est pas l'application complète. C'est la version minimale qui résout UN problème si bien que les gens reviennent chaque jour. Pour kamplink, ce problème est : trouver ses cours et ses opportunités de stage au même endroit, avec des gens vérifiés de sa filière.
+
+### Stack technique recommandée
+
+Compte tenu de ton budget et du fait que tu codes, voici ce que je recommande :
+
+**Frontend mobile :** React Native. Une seule codebase pour Android et iOS. Android est prioritaire — c'est 90% des étudiants sénégalais.
+
+**Frontend web :** React.js. Tu réutilises 70% du code du mobile.
+
+**Backend :** Node.js avec Express, ou Firebase si tu veux aller plus vite au début. Firebase te fait gagner 3 à 4 semaines sur l'authentification, le stockage de fichiers et les notifications push.
+
+**Base de données :** Firestore (si Firebase) ou PostgreSQL (si Node.js classique).
+
+**Stockage fichiers :** Firebase Storage ou Cloudinary pour les PDFs et photos de carte étudiante. Gratuit jusqu'à un certain volume.
+
+**Hébergement :** Vercel pour le web (gratuit), Firebase Hosting pour le mobile.
+
+**Budget estimé pour le stack :** quasi zéro au lancement grâce aux tiers gratuits. Tu paies quand tu grossis.
+
+### Les 5 écrans du MVP uniquement
+
+**Écran 1 — Inscription et vérification.** Numéro de téléphone, université, filière, niveau, photo carte étudiante. C'est tout. Pas de personnalisation avancée au MVP.
+
+**Écran 2 — Accueil personnalisé.** Annonces de sa filière, 3 dernières opportunités correspondant à son profil, derniers documents partagés dans son espace. Simple, utile, rapide.
+
+**Écran 3 — Espace communautaire.** Uniquement 2 canaux au MVP : Documents (partage de PDF) et Questions/Réponses. Le reste vient après.
+
+**Écran 4 — Opportunités.** Liste filtrée selon le profil. Titre, type, date limite, lien source. Pas de candidature intégrée au MVP — tu renvoies vers la source externe.
+
+**Écran 5 — Profil.** Nom, université, filière, niveau, badge vérifié ou en attente, documents partagés.
+
+**Ce que tu ne construis PAS au MVP :** la marketplace, le système de réputation avancé, les notifications complexes, le mode économie de données. Tout ça vient après.
+
+### Organisation de l'équipe
+
+Avec 3 à 5 personnes et tout le monde qui peut contribuer au code, voici comment répartir :
+
+Une ou deux personnes sur le frontend mobile React Native. Une personne sur le backend et la base de données. Une personne sur la vérification manuelle des comptes et l'alimentation des opportunités — c'est un vrai poste opérationnel au début. Toi tu orchestres, tu codes là où c'est bloquant, et tu gères la relation avec les premiers utilisateurs.
+
+---
+
+## ÉTAPE 2 — Lancement fermé (Semaines 11 à 14)
+
+### Principe du lancement fermé
+
+Tu ne lances pas publiquement. Tu invites 50 à 100 étudiants triés sur le volet d'une seule filière dans une seule université. Ce sont tes bêta-testeurs. Leur rôle est de casser l'application et de te dire ce qui manque.
+
+**Comment les recruter :** les délégués que tu as rencontrés en Étape 0 t'amènent leurs promos. Tu offres un accès exclusif, un badge "fondateur", et tu leur promets que leur retour construit l'application.
+
+**Ce que tu mesures pendant ces 4 semaines :**
+
+Le taux de rétention à 7 jours — combien reviennent après la première semaine. Si c'est en dessous de 30%, quelque chose ne fonctionne pas. La fonctionnalité la plus utilisée — c'est elle que tu renforces en priorité. Le bug le plus signalé — tu le corriges avant le lancement public. Le nombre de documents partagés — c'est l'indicateur de vie de la communauté.
+
+---
+
+## ÉTAPE 3 — Communication et croissance (Semaines 15 à 24)
+
+### Stratégie de communication avec zéro budget publicitaire
+
+**Le bouche-à-oreille structuré.** Tu identifies 5 délégués dans 5 filières différentes. Chacun devient ambassadeur officiel kamplink dans sa filière. Tu leur donnes des outils simples : un message WhatsApp à copier-coller, un statut à poster, une description pour leur groupe. En échange : accès prioritaire aux nouvelles fonctionnalités et badge ambassadeur visible sur leur profil.
+
+**Le contenu utile.** Un compte Instagram ou TikTok kamplink qui poste 3 fois par semaine uniquement du contenu utile : les 3 meilleures opportunités de la semaine pour les étudiants dakarois, un résumé de cours partagé par la communauté, une question de révision par matière. Pas de contenu corporate. Uniquement de l'utile.
+
+**Les partenariats entreprises.** Tu contactes 10 entreprises dakaroises qui recrutent des stagiaires — PME, cabinets, ONG. Tu leur proposes de poster gratuitement pendant 3 mois en échange d'un témoignage. La plupart acceptent parce qu'ils n'ont aucune raison de refuser une visibilité gratuite auprès d'étudiants vérifiés.
+
+**Les universités.** Tu approches le service de scolarité ou les associations étudiantes officielles. Tu proposes de relayer leurs annonces gratuitement sur kamplink. C'est une valeur immédiate pour eux, et ça te donne de la légitimité institutionnelle.
+
+### Objectifs de croissance par palier
+
+À la fin du mois 3 : 500 utilisateurs actifs dans une filière d'une université. À la fin du mois 6 : 2 000 utilisateurs actifs dans 3 filières. À la fin du mois 12 : 10 000 utilisateurs actifs dans plusieurs universités. C'est à partir de 10 000 actifs que les entreprises commencent à payer pour avoir accès à ta base.
+
+---
+
+## ÉTAPE 4 — Itérations produit (Mois 4 à 12)
+
+Tu n'ajoutes une fonctionnalité que si deux conditions sont réunies : au moins 20% de tes utilisateurs l'ont demandée, et tu peux la construire en moins de 2 semaines.
+
+**Ordre de priorité des fonctionnalités post-MVP :**
+
+En premier le système de réputation basé sur les contributions — c'est ce qui incite les gens à partager des cours et répondre aux questions. En deuxième les notifications intelligentes — nouvelles opportunités dans sa filière, réponse à sa question. En troisième le mode économie de données — images compressées, chargement différé, cache local. En quatrième l'extension à d'autres universités — tu dupliques le modèle d'une filière à l'autre. En cinquième la marketplace — uniquement quand tu as une communauté active et un système de vérification solide.
+
+---
+
+## ÉTAPE 5 — Monétisation (À partir du mois 9-12)
+
+Tu ne monétises qu'une fois que tu as prouvé que les gens utilisent l'application chaque semaine. Avant ça, toute tentative de monétisation te fera perdre des utilisateurs.
+
+**Premier levier : offres sponsorisées.** Une entreprise paie pour que son offre apparaisse en tête de liste dans les résultats filtrés. Prix de départ : 50 000 à 100 000 CFA par mois. Simple, clair, mesurable.
+
+**Deuxième levier : abonnement recruteur.** Une entreprise paie pour accéder à la base filtrée par filière, niveau et université. Elle peut contacter directement des étudiants vérifiés. Prix : 150 000 à 300 000 CFA par mois selon le volume.
+
+**Troisième levier : contrats universités.** L'université paie pour diffuser officiellement ses annonces et gérer son espace institutionnel sur kamplink. Ce levier arrive en Phase 2 quand tu as la légitimité.
+
+---
+
+## Récapitulatif Chronologique
+
+**Semaines 1-2 :** validation terrain, 20 interviews, landing page, 100 emails collectés.
+
+**Semaines 3-10 :** développement MVP — 5 écrans, stack Firebase + React Native, vérification manuelle des premiers comptes.
+
+**Semaines 11-14 :** lancement fermé 50-100 bêta-testeurs, corrections, mesure de la rétention.
+
+**Semaines 15-24 :** lancement public, ambassadeurs dans les filières, partenariats entreprises gratuits, contenu Instagram/TikTok.
+
+**Mois 6-12 :** itérations produit basées sur l'usage réel, extension à d'autres universités, objectif 10 000 actifs.
+
+**À partir du mois 9-12 :** premières offres sponsorisées, début de la monétisation.
+
+---
+
+## Ce qui fera échouer le projet si tu n'y fais pas attention
+
+Construire trop vite sans valider. Le code ne sert à rien si personne n'en veut.
+
+Vouloir toutes les universités dès le lancement. Une filière bien couverte vaut mieux que dix filières à moitié vides.
+
+Négliger la qualité des opportunités. Une seule offre expirée ou frauduleuse détruit la confiance que tu as mis des mois à construire.
+
+Ne pas désigner quelqu'un dans l'équipe dont le seul rôle est l'opérationnel — vérifier les comptes, alimenter les opportunités, répondre aux signalements. Ce n'est pas glamour mais c'est ce qui fait tenir la qualité au début.
+
+---
+
+La prochaine chose concrète à faire cette semaine : planifier 5 interviews d'étudiants. Pas coder. Pas designer. Parler aux gens d'abord.

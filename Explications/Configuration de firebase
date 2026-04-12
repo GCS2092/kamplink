@@ -1,0 +1,461 @@
+Voici le guide complet, étape par étape.
+
+---
+
+## VUE D'ENSEMBLE
+
+```
+Firebase Console (navigateur)
+        ↓
+NestJS — installation des packages
+        ↓
+Configuration (variables d'environnement)
+        ↓
+Module Firebase Admin (vérification tokens)
+        ↓
+Auth Guard (protège les routes)
+        ↓
+Endpoint OTP (envoi + vérification)
+        ↓
+FCM (notifications push)
+```
+
+---
+
+## ÉTAPE 1 — Créer le projet Firebase Console
+
+1. Va sur **console.firebase.google.com**
+2. Clique **"Ajouter un projet"**
+3. Nom : `kamplink` → Continuer
+4. Désactive Google Analytics → Créer le projet
+
+### Activer l'authentification par téléphone
+- Menu gauche → **Authentication** → **Commencer**
+- Onglet **"Sign-in method"**
+- Clique **Téléphone** → Active → Enregistrer
+
+### Générer la clé admin (service account)
+- Roue dentée ⚙️ en haut à gauche → **Paramètres du projet**
+- Onglet **"Comptes de service"**
+- Clique **"Générer une nouvelle clé privée"**
+- Télécharge le fichier JSON → renomme-le `firebase-service-account.json`
+- Place-le à la racine de ton projet NestJS
+- **Ajoute-le immédiatement dans `.gitignore`**
+
+```bash
+# .gitignore
+firebase-service-account.json
+```
+
+---
+
+## ÉTAPE 2 — Installation des packages
+
+```bash
+npm install firebase-admin
+npm install firebase  # SDK client (pour les tests)
+```
+
+---
+
+## ÉTAPE 3 — Variables d'environnement
+
+Ouvre ton fichier `.env` et ajoute :
+
+```env
+# PostgreSQL (déjà configuré)
+DATABASE_URL="postgresql://user:password@host:5432/kamplink"
+
+# Firebase — copie ces valeurs depuis ton fichier JSON téléchargé
+FIREBASE_PROJECT_ID="kamplink-xxxxx"
+FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxxxx@kamplink-xxxxx.iam.gserviceaccount.com"
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nxxxxxxxx\n-----END PRIVATE KEY-----\n"
+```
+
+Les valeurs exactes sont dans le fichier JSON téléchargé :
+- `project_id` → `FIREBASE_PROJECT_ID`
+- `client_email` → `FIREBASE_CLIENT_EMAIL`
+- `private_key` → `FIREBASE_PRIVATE_KEY`
+
+---
+
+## ÉTAPE 4 — Créer le module Firebase dans NestJS
+
+### Structure des fichiers à créer
+
+```
+src/
+  firebase/
+    firebase.module.ts
+    firebase.service.ts
+  auth/
+    auth.module.ts
+    auth.service.ts
+    auth.controller.ts
+    auth.guard.ts
+```
+
+### `src/firebase/firebase.service.ts`
+
+```typescript
+import { Injectable, OnModuleInit } from '@nestjs/common';
+import * as admin from 'firebase-admin';
+
+@Injectable()
+export class FirebaseService implements OnModuleInit {
+  private app: admin.app.App;
+
+  onModuleInit() {
+    // Initialise Firebase Admin une seule fois au démarrage
+    if (!admin.apps.length) {
+      this.app = admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          // Les \n dans la clé privée doivent être interprétés
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        }),
+      });
+    } else {
+      this.app = admin.apps[0];
+    }
+  }
+
+  // Vérifie un token JWT envoyé par le client mobile
+  async verifyToken(token: string): Promise<admin.auth.DecodedIdToken> {
+    return admin.auth().verifyIdToken(token);
+  }
+
+  // Crée ou récupère un utilisateur Firebase par téléphone
+  async getUserByPhone(phone: string): Promise<admin.auth.UserRecord> {
+    return admin.auth().getUserByPhoneNumber(phone);
+  }
+
+  // Envoie une notification push via FCM
+  async sendPushNotification(payload: {
+    token: string;
+    title: string;
+    body: string;
+    data?: Record<string, string>;
+  }): Promise<string> {
+    return admin.messaging().send({
+      token: payload.token,
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: payload.data,
+      android: {
+        priority: 'high',
+      },
+    });
+  }
+
+  // Envoie une notif à plusieurs appareils à la fois
+  async sendMulticast(payload: {
+    tokens: string[];
+    title: string;
+    body: string;
+    data?: Record<string, string>;
+  }): Promise<admin.messaging.BatchResponse> {
+    return admin.messaging().sendEachForMulticast({
+      tokens: payload.tokens,
+      notification: {
+        title: payload.title,
+        body: payload.body,
+      },
+      data: payload.data,
+    });
+  }
+}
+```
+
+### `src/firebase/firebase.module.ts`
+
+```typescript
+import { Global, Module } from '@nestjs/common';
+import { FirebaseService } from './firebase.service';
+
+@Global() // Disponible dans toute l'app sans réimporter
+@Module({
+  providers: [FirebaseService],
+  exports: [FirebaseService],
+})
+export class FirebaseModule {}
+```
+
+---
+
+## ÉTAPE 5 — Auth Guard (protège les routes)
+
+Le guard intercepte chaque requête, lit le token dans le header, le vérifie avec Firebase, puis charge l'utilisateur depuis PostgreSQL.
+
+### `src/auth/auth.guard.ts`
+
+```typescript
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class AuthGuard implements CanActivate {
+  constructor(
+    private firebase: FirebaseService,
+    private prisma: PrismaService,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+    const authHeader = request.headers['authorization'];
+
+    // Vérifie que le header Authorization existe et est bien formé
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Token manquant');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+      // 1. Vérifie le token avec Firebase
+      const decoded = await this.firebase.verifyToken(token);
+
+      // 2. Cherche l'utilisateur dans PostgreSQL via firebase_uid
+      const user = await this.prisma.utilisateur.findUnique({
+        where: { firebaseUid: decoded.uid },
+        include: { profil: true },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('Utilisateur introuvable');
+      }
+
+      if (user.estBanni) {
+        throw new UnauthorizedException('Compte suspendu');
+      }
+
+      // 3. Attache l'utilisateur à la requête — accessible dans tous les controllers
+      request.user = user;
+      return true;
+
+    } catch (error) {
+      throw new UnauthorizedException('Token invalide ou expiré');
+    }
+  }
+}
+```
+
+---
+
+## ÉTAPE 6 — Auth Service et Controller (OTP)
+
+### Comment fonctionne l'OTP avec Firebase
+
+```
+Mobile                    NestJS                    Firebase
+  |                          |                          |
+  |-- POST /auth/otp/send --> |                          |
+  |   { telephone }          |-- createCustomToken() -->|
+  |                          |<-- customToken -----------|
+  |                          |                          |
+  |   (Firebase SDK mobile envoie l'OTP automatiquement)
+  |                          |                          |
+  |-- POST /auth/otp/verify ->|                          |
+  |   { idToken }            |-- verifyIdToken() ------>|
+  |                          |<-- decoded (uid, phone) --|
+  |                          |                          |
+  |                          |-- findOrCreate user DB    |
+  |<-- { accessToken, user } |                          |
+```
+
+### `src/auth/auth.service.ts`
+
+```typescript
+import { Injectable, ConflictException } from '@nestjs/common';
+import { FirebaseService } from '../firebase/firebase.service';
+import { PrismaService } from '../prisma/prisma.service';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private firebase: FirebaseService,
+    private prisma: PrismaService,
+  ) {}
+
+  // Appelé après que Firebase a vérifié l'OTP côté mobile
+  // Le mobile envoie l'idToken Firebase → on crée/récupère l'user en DB
+  async loginWithFirebaseToken(idToken: string) {
+    // 1. Vérifie le token avec Firebase
+    const decoded = await this.firebase.verifyToken(idToken);
+    const firebaseUid = decoded.uid;
+    const telephone = decoded.phone_number;
+
+    // 2. Cherche si l'utilisateur existe déjà
+    let user = await this.prisma.utilisateur.findUnique({
+      where: { firebaseUid },
+      include: { profil: true },
+    });
+
+    // 3. Sinon, crée-le (première connexion)
+    if (!user) {
+      user = await this.prisma.utilisateur.create({
+        data: {
+          firebaseUid,
+          telephone,
+          role: 'student',
+          estActif: true,
+        },
+        include: { profil: true },
+      });
+    }
+
+    return {
+      user,
+      // Le mobile garde son idToken Firebase pour les prochaines requêtes
+      // Pas besoin de générer un JWT custom — Firebase s'en charge
+      message: user.profil ? 'Connecté' : 'Profil à compléter',
+    };
+  }
+
+  // Création du profil académique après première connexion
+  async createProfil(userId: string, data: {
+    prenom: string;
+    nom: string;
+    niveau: string;
+    universiteId: string;
+    filiereId: string;
+  }) {
+    return this.prisma.profil.create({
+      data: {
+        utilisateurId: userId,
+        prenom: data.prenom,
+        nom: data.nom,
+        niveau: data.niveau as any,
+        universiteId: data.universiteId,
+        filiereId: data.filiereId,
+      },
+    });
+  }
+}
+```
+
+### `src/auth/auth.controller.ts`
+
+```typescript
+import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
+import { AuthService } from './auth.service';
+import { AuthGuard } from './auth.guard';
+
+@Controller('auth')
+export class AuthController {
+  constructor(private authService: AuthService) {}
+
+  // Étape 1 : Le mobile a vérifié l'OTP avec Firebase
+  // Il envoie l'idToken ici pour créer/récupérer son compte
+  @Post('login')
+  async login(@Body() body: { idToken: string }) {
+    return this.authService.loginWithFirebaseToken(body.idToken);
+  }
+
+  // Étape 2 : Compléter le profil académique (route protégée)
+  @Post('profile')
+  @UseGuards(AuthGuard)
+  async createProfil(@Request() req, @Body() body: {
+    prenom: string;
+    nom: string;
+    niveau: string;
+    universiteId: string;
+    filiereId: string;
+  }) {
+    return this.authService.createProfil(req.user.id, body);
+  }
+}
+```
+
+---
+
+## ÉTAPE 7 — Brancher tout dans AppModule
+
+### `src/app.module.ts`
+
+```typescript
+import { Module } from '@nestjs/common';
+import { FirebaseModule } from './firebase/firebase.module';
+import { AuthModule } from './auth/auth.module';
+import { PrismaModule } from './prisma/prisma.module';
+
+@Module({
+  imports: [
+    FirebaseModule,  // Global — disponible partout
+    PrismaModule,
+    AuthModule,
+  ],
+})
+export class AppModule {}
+```
+
+### `src/auth/auth.module.ts`
+
+```typescript
+import { Module } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { AuthGuard } from './auth.guard';
+import { PrismaModule } from '../prisma/prisma.module';
+
+@Module({
+  imports: [PrismaModule],
+  controllers: [AuthController],
+  providers: [AuthService, AuthGuard],
+  exports: [AuthGuard], // Export pour utiliser dans d'autres modules
+})
+export class AuthModule {}
+```
+
+---
+
+## ÉTAPE 8 — Tester que tout fonctionne
+
+```bash
+# Démarre le serveur
+npm run start:dev
+
+# Test avec curl — simule un login
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"idToken": "TOKEN_FIREBASE_DU_MOBILE"}'
+
+# Test route protégée
+curl -X GET http://localhost:3000/auth/profile \
+  -H "Authorization: Bearer TOKEN_FIREBASE_DU_MOBILE"
+```
+
+---
+
+## RÉCAPITULATIF FINAL
+
+```
+Firebase Console  →  Projet créé, Auth téléphone activé, clé JSON téléchargée
+     ↓
+.env              →  FIREBASE_PROJECT_ID, CLIENT_EMAIL, PRIVATE_KEY
+     ↓
+FirebaseModule    →  Initialise Firebase Admin au démarrage
+     ↓
+AuthGuard         →  Vérifie chaque token entrant → charge user depuis PostgreSQL
+     ↓
+AuthController    →  POST /auth/login  →  crée/récupère l'user en DB
+     ↓
+FCM               →  sendPushNotification() disponible dans FirebaseService
+```
+
+**Ce que le mobile doit faire de son côté :**
+- Utiliser le SDK Firebase pour React Native (`@react-native-firebase/auth`)
+- Appeler `signInWithPhoneNumber(telephone)` → Firebase envoie l'OTP SMS
+- Après saisie du code → récupère `idToken` via `user.getIdToken()`
+- Envoie ce `idToken` à ton endpoint `POST /auth/login`
+
+Dis-moi si tu veux qu'on attaque un module spécifique ensuite — spaces, documents, ou les notifications.

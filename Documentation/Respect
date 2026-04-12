@@ -1,0 +1,10 @@
+Quelques précisions importantes que le tableau ne peut pas capturer.
+Sur les coûts, le piège principal c'est les SMS OTP Firebase. Si tu as beaucoup d'inscriptions ratées (utilisateurs qui re-demandent plusieurs fois), ça monte vite. Mets une limite de 3 tentatives par numéro par heure dès le début — c'est une Cloud Function de 20 lignes qui te fait économiser des dizaines de dollars.
+Sur le plan Blaze Firebase, c'est obligatoire pour les Cloud Functions en production, mais tu ne paies que ce que tu consommes. Pour les premières semaines de dev, tu restes à 0.Configuredesalertesdebudgetaˋ10. Configure des alertes de budget à 10
+.Configuredesalertesdebudgetaˋ10 et 50$ dans la Google Cloud Console — comme ça tu ne découvres jamais une mauvaise surprise en fin de mois.
+
+Sur Termii pour les SMS, négocie directement avec eux pour un tarif en CFA. Ils ont un bureau Afrique et des offres prépayées. C'est plus simple que de jongler avec des conversions de devises.
+Sur Wave et Orange Money, commence les démarches pour le compte marchand Wave dès la semaine 4 — le processus KYC prend 3 à 6 semaines au Sénégal. Ne bloque pas toute la phase 3 à cause de ça.
+Tu veux que je te donne le code exact pour commencer — la structure du monorepo, les Security Rules Firestore, ou la première Cloud Function d'auth ?
+
+Le but est de me permettre de faire des economies en evitant tout ce qui est exageré

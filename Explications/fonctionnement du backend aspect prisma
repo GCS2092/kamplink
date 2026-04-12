@@ -1,0 +1,194 @@
+## Ce qu'on vient de faire — bilan complet
+
+---
+
+### Les fichiers qu'on a créés et leur rôle
+
+```
+src/
+  prisma/
+    prisma.service.ts    ← connexion à PostgreSQL
+    prisma.module.ts     ← rend Prisma disponible partout
+
+  firebase/
+    firebase.service.ts  ← tout ce qui touche Firebase
+    firebase.module.ts   ← rend Firebase disponible partout
+
+  auth/
+    auth.guard.ts        ← policier des routes protégées
+    auth.service.ts      ← logique métier de l'auth
+    auth.controller.ts   ← endpoints HTTP (/auth/login etc.)
+    auth.module.ts       ← regroupe tout le module auth
+
+  app.module.ts          ← fichier racine qui assemble tout
+```
+
+**`prisma.service.ts`** — C'est le pont entre ton code et PostgreSQL. Quand tu veux lire ou écrire en base, tu passes toujours par lui. Il se connecte à la base au démarrage du serveur.
+
+**`prisma.module.ts`** — Rend `PrismaService` injectable partout dans l'app. Sans lui, les autres modules ne peuvent pas utiliser Prisma.
+
+**`firebase.service.ts`** — Contient 3 fonctions clés : `verifyToken()` pour valider un token JWT Firebase, `sendPushNotification()` pour envoyer une notif sur un téléphone, `sendMulticast()` pour envoyer à plusieurs téléphones à la fois.
+
+**`firebase.module.ts`** — Marqué `@Global()`, donc Firebase est disponible dans toute l'app sans avoir à le réimporter dans chaque module.
+
+**`auth.guard.ts`** — C'est le gardien. Il intercepte chaque requête sur les routes protégées, extrait le token du header `Authorization: Bearer xxx`, le vérifie avec Firebase, puis charge l'utilisateur depuis PostgreSQL. Si quelque chose cloche → il bloque la requête.
+
+**`auth.service.ts`** — Contient la logique : quand un utilisateur se connecte pour la première fois, il crée son compte dans PostgreSQL. Les fois suivantes, il le retrouve.
+
+**`auth.controller.ts`** — Expose les endpoints HTTP que le mobile appelle : `POST /auth/login` et `POST /auth/profile`.
+
+**`auth.module.ts`** — Assemble les pièces du module auth ensemble.
+
+---
+
+### Comment ça s'articule concrètement
+
+```
+MOBILE                        NESTJS                      FIREBASE / POSTGRESQL
+  |                              |                               |
+  | 1. Saisit son numéro         |                               |
+  |    Firebase SDK envoie OTP --+------------------------------>|
+  |    Firebase vérifie le code  |                         Firebase Auth
+  |    Firebase retourne idToken |                               |
+  |                              |                               |
+  | 2. POST /auth/login          |                               |
+  |    { idToken }  ------------>|                               |
+  |                              | verifyToken(idToken) -------->|
+  |                              |<----- decoded { uid, phone } -|
+  |                              |                               |
+  |                              | findUnique({ firebaseUid })-->| PostgreSQL
+  |                              |<----- user ou null -----------|
+  |                              |                               |
+  |                              | si null → crée l'user ------->| PostgreSQL
+  |                              |                               |
+  |<--- { user, message } -------|                               |
+  |                              |                               |
+  | 3. Toutes les autres requêtes|                               |
+  |    Authorization: Bearer xxx |                               |
+  |    GET /espaces  ----------->| AuthGuard vérifie token       |
+  |                              | charge user depuis DB         |
+  |                              | attache à req.user            |
+  |                              | → laisse passer               |
+  |<--- données de l'espace -----|                               |
+```
+
+---
+
+### Comment savoir que Firebase fonctionne
+
+Tu ne peux pas tester Firebase directement sans un vrai token généré par un mobile. Mais voici les étapes pour valider chaque partie :
+
+**Étape 1 — Vérifier que le serveur démarre sans erreur**
+```powershell
+npm run start:dev
+# Tu dois voir : [NestApplication] Nest application successfully started
+```
+
+**Étape 2 — Vérifier que Firebase s'initialise**
+
+Ajoute temporairement un log dans `firebase.service.ts` :
+```typescript
+onModuleInit() {
+  if (!admin.apps.length) {
+    this.app = admin.initializeApp({ ... });
+    console.log('✅ Firebase Admin initialisé');  // ← ajoute ça
+  }
+}
+```
+Si tu vois ce message au démarrage → Firebase est connecté.
+
+**Étape 3 — Tester l'endpoint `/auth/login`**
+
+Pour tester sans mobile, Firebase permet de créer des tokens de test dans la console :
+- Va sur **console.firebase.google.com**
+- Ton projet → **Authentication** → **Users**
+- Ajoute manuellement un numéro de test : `+221700000000`
+- Dans **Authentication** → **Sign-in method** → **Téléphone** → ajoute un numéro de test avec un code fixe (ex: `123456`)
+
+Ensuite depuis Postman ou curl :
+```bash
+# Le mobile fait ça automatiquement, mais pour tester manuellement
+# Tu as besoin d'un vrai idToken — impossible à simuler sans le SDK mobile
+# La vraie validation se fait quand tu connectes l'app mobile
+```
+
+**Étape 4 — La vraie validation end-to-end**
+
+La confirmation finale que tout fonctionne sera quand ton app mobile (Expo/React Native) :
+1. Appelle `signInWithPhoneNumber('+221700000000')`
+2. Saisit le code `123456`
+3. Récupère l'`idToken`
+4. L'envoie à `POST /auth/login`
+5. Reçoit un utilisateur en retour
+
+---
+
+### Résumé de l'état actuel
+
+| Composant | État |
+|-----------|------|
+| PostgreSQL + Prisma | ✅ Tables créées, connexion active |
+| Firebase Admin SDK | ✅ Installé, configuré |
+| Auth Guard | ✅ Prêt à protéger les routes |
+| Endpoints auth | ✅ `/auth/login` et `/auth/profile` |
+| Test end-to-end | ⏳ Nécessite l'app mobile |
+
+Dis-moi si les erreurs sont résolues et si le serveur démarre — on peut ensuite attaquer le premier vrai module métier (espaces, documents, ou opportunités).
+Ce que chaque fichier fait :
+users.service.ts — toute la logique métier : créer/modifier profil, soumettre une carte étudiante, approuver/rejeter une vérification, bannir un compte, incrémenter le score de réputation. Toutes les règles métier RG-01 à RG-10 sont respectées.
+users.controller.ts — les endpoints HTTP. 3 niveaux d'accès : public (universités, profil public), connecté (mon profil, ma vérification), admin (valider vérifications, bannir).
+roles.guard.ts + roles.decorator.ts — le système de rôles. Tu mets @Roles('admin') sur n'importe quelle route et seuls les admins passent.
+
+Endpoints disponibles après intégration :
+MéthodeRouteAccèsGET/users/universitesPublicGET/users/universites/:id/filieresPublicGET/users/meConnectéPOST/users/me/profileConnectéPATCH/users/me/profileConnectéPOST/users/me/verificationConnectéGET/users/me/verificationConnectéGET/users/admin/verificationsAdminPATCH/users/admin/verifications/:id/approveAdminPATCH/users/admin/verifications/:id/rejectAdminPATCH/users/admin/:id/banAdmin
+
+
+Utilisation du class validator pour eviter les erreurs au niveua du format des donnees
+
+creation d un utilisateur u as construit un vrai flow d’auth moderne :
+
+🔐 Étape 1 — Firebase Auth
+
+Tu as :
+
+créé un utilisateur dans Firebase
+fait un login Firebase (email + password)
+récupéré un ID Token (JWT Firebase)
+
+👉 Ce token représente l’identité authentifiée de l’utilisateur
+
+📡 Étape 2 — NestJS reçoit le token
+
+Ton endpoint :
+
+POST /auth/login
+
+fait :
+
+firebase.verifyToken(idToken)
+
+👉 donc :
+
+Firebase vérifie le token
+renvoie uid + phone
+ton backend cherche ou crée un utilisateur PostgreSQL
+🗄️ Étape 3 — Synchronisation DB
+
+Si l’utilisateur n’existe pas :
+
+prisma.utilisateur.create()
+
+👉 Donc maintenant tu as :
+
+✔️ Firebase user (auth)
+✔️ PostgreSQL user (données métier)
+
+🎯 Résultat global
+
+Tu as maintenant :
+
+Firebase (auth)
+   ↓ idToken
+NestJS (verify)
+   ↓
+PostgreSQL (utilisateur + profil + futur data)

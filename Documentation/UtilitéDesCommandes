@@ -1,0 +1,291 @@
+Parfait 👍 je vais te donner une version **adaptée à PowerShell**, claire et **exécutable ligne par ligne**, avec une explication simple pour chaque commande.
+
+---
+
+# 🧭 ⚙️ ÉTAPE PAR ÉTAPE (PowerShell)
+
+👉 Ouvre **PowerShell** dans le dossier de ton projet.
+
+---
+
+# 🟢 1. Vérifier que tout est installé
+
+```powershell
+node -v
+npm -v
+git --version
+```
+
+👉 **À quoi ça sert :**
+
+* vérifier que Node.js, npm et Git fonctionnent
+* si une commande ne marche pas → il faut installer l’outil
+
+---
+
+# 🟢 2. Créer le backend (NestJS)
+
+```powershell
+npx @nestjs/cli new backend
+```
+
+👉 **À quoi ça sert :**
+
+* crée un dossier `backend`
+* installe automatiquement un serveur API prêt à l’emploi
+
+👉 Ensuite :
+
+```powershell
+cd backend
+```
+
+👉 tu entres dans ton projet backend
+
+---
+
+# 🟢 3. Installer les dépendances
+
+```powershell
+npm install @nestjs/platform-fastify @nestjs/config @nestjs/throttler prisma@6.16.3 @prisma/client@6.16.3 zod nestjs-pino pino node-cron firebase-admin @sentry/node helmet
+```
+
+👉 **À quoi ça sert :**
+
+* ajoute toutes les fonctionnalités importantes :
+
+  * API rapide (Fastify)
+  * base de données (Prisma)
+  * sécurité (helmet)
+  * logs (pino)
+  * Firebase (auth)
+
+---
+
+# 🟢 4. Installer outils développeur
+
+```powershell
+npm install -D typescript ts-node eslint prettier
+```
+
+👉 **À quoi ça sert :**
+
+* TypeScript → code propre
+* ESLint → détecte erreurs
+* Prettier → formate ton code
+
+---
+
+# 🟢 5. Ajouter scripts utiles
+
+```powershell
+npm pkg set scripts.typecheck="tsc --noEmit"
+npm pkg set scripts.prisma:generate="prisma generate"
+npm pkg set scripts.prisma:migrate:dev="prisma migrate dev"
+npm pkg set scripts.prisma:migrate:deploy="prisma migrate deploy"
+npm pkg set scripts.prisma:studio="prisma studio"
+```
+
+👉 **À quoi ça sert :**
+
+* ajouter des commandes personnalisées dans `package.json`
+* tu pourras faire plus tard :
+
+  ```powershell
+  npm run prisma:studio
+  ```
+
+---
+
+# 🟢 6. Initialiser Prisma (base de données)
+
+```powershell
+npx prisma init
+```
+
+👉 **À quoi ça sert :**
+
+* crée :
+
+  * fichier `.env`
+  * dossier `prisma/`
+
+---
+
+# 🟢 7. Configurer la base de données
+
+Dans `.env` :
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require"
+```
+
+👉 **À quoi ça sert :**
+
+* connecter ton backend à PostgreSQL
+
+---
+
+# 🟢 8. Créer la base (migration)
+
+```powershell
+npx prisma migrate dev --name init
+```
+
+👉 **À quoi ça sert :**
+
+* crée les tables dans la base de données
+
+---
+
+# 🟢 9. Générer Prisma Client
+
+```powershell
+npx prisma generate
+```
+
+👉 **À quoi ça sert :**
+
+* permet à ton code de parler avec la base de données
+
+---
+
+# 🟢 10. Voir la base de données
+
+```powershell
+npx prisma studio
+```
+
+👉 **À quoi ça sert :**
+
+* ouvre une interface web pour voir/modifier les données
+
+---
+
+# 🟢 11. Lancer le serveur
+
+```powershell
+npm run start:dev
+```
+
+👉 **À quoi ça sert :**
+
+* démarre ton API en local
+
+👉 Résultat :
+➡️ [http://localhost:4000](http://localhost:4000)
+
+---
+
+# 🟢 12. Build (production)
+
+```powershell
+npm run build
+```
+
+👉 **À quoi ça sert :**
+
+* transforme ton code en version optimisée
+
+---
+
+# 🟢 13. Lancer en production
+
+```powershell
+npm run start:prod
+```
+
+👉 **À quoi ça sert :**
+
+* lance ton API comme en vrai (production)
+
+---
+
+# 🟢 14. Installer Firebase CLI
+
+```powershell
+npm install -g firebase-tools
+firebase login
+```
+
+👉 **À quoi ça sert :**
+
+* connecter ton projet à Firebase
+
+---
+
+# 🟢 15. Vérifier le code avant déploiement
+
+```powershell
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
+
+👉 **À quoi ça sert :**
+
+* vérifier que tout fonctionne sans bug
+
+---
+
+# 🟢 16. Appliquer migrations en production
+
+```powershell
+npx prisma migrate deploy
+```
+
+👉 **À quoi ça sert :**
+
+* mettre à jour la base de données en ligne
+
+---
+
+# 🟢 17. Tester ton API en ligne
+
+```powershell
+curl https://ton-api.onrender.com/health
+```
+
+👉 **À quoi ça sert :**
+
+* vérifier que ton serveur fonctionne
+
+---
+
+# 🔁 Commandes importantes à retenir
+
+👉 Dev quotidien :
+
+```powershell
+npm run start:dev
+```
+
+👉 Base de données :
+
+```powershell
+npx prisma studio
+```
+
+👉 Migration :
+
+```powershell
+npx prisma migrate dev --name update
+```
+
+---
+
+# 🧠 Résumé simple
+
+👉 Tu fais 4 choses avec ces commandes :
+
+1. 🏗️ Créer ton backend
+2. 🗄️ Connecter une base de données
+3. ▶️ Lancer et tester ton serveur
+4. 🚀 Déployer en ligne
+
+---
+
+Si tu veux, je peux te faire :
+✅ un **copier-coller prêt à exécuter sans erreur**
+✅ ou t’accompagner pendant que tu exécutes (tu me dis où tu bloques)

@@ -1,0 +1,125 @@
+# Stack complète kamplink — Version finale de production
+
+---
+
+## 1. Applications clientes
+
+**Mobile : React Native avec Expo (SDK 51+)**
+Android prioritaire, iOS en parallèle avec la même codebase. Expo gère les builds des deux plateformes, les mises à jour OTA sans passer par le Play Store, et l'accès aux APIs natives (caméra pour la carte étudiante, notifications, stockage local). Tu n'as pas besoin d'Expo Go en production — tu utilises EAS Build pour générer tes APK et IPA.
+
+**Web : Next.js déployé sur Vercel**
+Pas React.js simple. Next.js parce que tu as besoin du rendu côté serveur pour le SEO des pages publiques (opportunités, landing), des routes API légères pour les webhooks de paiement, et de l'optimisation d'images automatique. Tu réutilises tes composants React entre le web et le mobile via une lib de composants partagée.
+
+---
+
+## 2. Authentification
+
+**Firebase Authentication**
+OTP SMS via Firebase Auth pour tous les utilisateurs. C'est le flux principal : numéro de téméphone → SMS → code à 6 chiffres → session. Pour les universités avec email institutionnel (ton niveau 1), Firebase Auth gère aussi la vérification email en parallèle. Les sessions sont persistantes et synchronisées entre mobile et web automatiquement.
+
+**Complément pour le backoffice admin : Firebase Auth avec rôles custom claims**
+Les administrateurs kamplink et les délégués ont des claims JWT personnalisés (`role: "admin"`, `role: "delegate"`) injectés côté serveur via Firebase Admin SDK. Ces claims contrôlent l'accès aux canaux Annonces et aux panneaux de modération.
+
+---
+
+## 3. Base de données
+
+**Firestore pour tout le temps réel et la structure principale**
+La hiérarchie de kamplink colle parfaitement au modèle document : `universities/{uniId}/filières/{filiereId}/channels/{channelId}/posts/{postId}`. Le cache offline natif de Firestore est critique pour tes utilisateurs en 3G — les annonces et documents déjà chargés restent accessibles hors connexion. Les listeners temps réel de Firestore remplacent un système de websockets entier pour les canaux de discussion.
+
+Structure des collections principales :
+- `users/{uid}` — profil, statut de vérification, préférences, score de réputation
+- `universities/{id}/spaces/{spaceId}/channels/{channelId}/posts/{postId}` — tout le contenu communautaire
+- `opportunities/{id}` — les offres avec leurs tags indexés
+- `verificationRequests/{id}` — les demandes en attente pour le backoffice
+- `transactions/{id}` — Phase 3, marketplace
+
+**Algolia pour la recherche**
+Firestore ne fait pas de recherche full-text. Pour retrouver un document de cours par mot-clé, chercher une opportunité par intitulé, ou explorer les questions/réponses d'une filière, tu as besoin d'Algolia. Tu synchronises Firestore vers Algolia via une Cloud Function déclenchée à chaque écriture. Plan gratuit jusqu'à 10 000 enregistrements — largement suffisant pour le lancement.
+
+---
+
+## 4. Stockage de fichiers
+
+**Firebase Storage pour les PDFs, photos de carte étudiante et photos de profil**
+Chaque fichier a des règles d'accès liées à l'Auth Firebase — un PDF d'une filière n'est accessible qu'aux membres vérifiés de cette filière. Tu organises le stockage en buckets séparés : `/cards/{uid}/` pour les cartes étudiantes (accès admin uniquement), `/documents/{spaceId}/` pour les cours, `/profiles/{uid}/` pour les avatars.
+
+**Compression obligatoire avant upload**
+`expo-image-manipulator` pour les photos : maximum 800px de large, qualité 70%, format JPEG. Ça passe une photo de 4 MB à 150 KB avant upload. Pour les PDFs, tu n'as pas à compresser mais tu sers toujours une URL signée avec expiration, jamais un lien public permanent.
+
+---
+
+## 5. Vérification des cartes étudiantes
+
+C'est le composant le plus critique de kamplink. Voici la stack complète.
+
+**Google Cloud Vision API pour la pré-analyse automatique**
+Quand un étudiant soumet sa carte, une Cloud Function déclenche Vision API sur l'image. Vision API extrait le texte (OCR), détecte si c'est bien un document (pas une photo de paysage), et vérifie la présence de mots-clés universitaires. Ça filtre automatiquement 60 à 70% des soumissions invalides avant même que ton équipe les voie. Coût : 1,50$ pour 1 000 images — négligeable.
+
+**Backoffice admin React (Next.js) pour la validation humaine**
+Une interface web dédiée à ton équipe. Elle affiche les demandes en attente avec la photo de carte en haute résolution, le nom saisi par l'étudiant, l'université déclarée, et les infos extraites par Vision API. Ton admin valide ou rejette en un clic. En cas de rejet, il choisit un motif dans une liste (carte illisible, carte expirée, informations incohérentes) et l'étudiant reçoit une notification avec instructions.
+
+**Cloud Function pour l'orchestration**
+À la soumission → pré-analyse Vision API → statut `pending_review`. À la validation admin → mise à jour du profil Firestore, injection du custom claim `verified: true` dans Firebase Auth, envoi de la notification FCM. À l'expiration (si pas de réponse en 48h) → notification de relance automatique.
+
+**Pour la semi-automatisation en Phase 2**
+Quand tu auras assez de cartes validées par université, tu entraînes un modèle simple avec **Google AutoML Vision** pour reconnaître les formats de cartes par établissement. Ça te permettra de valider automatiquement les cartes dont le score de confiance dépasse 95%, et de ne soumettre à révision humaine que les cas ambigus.
+
+---
+
+## 6. Backend et logique métier
+
+**Firebase Cloud Functions (Node.js/TypeScript)**
+Toute la logique qui ne doit pas tourner côté client : vérification des cartes, matching opportunités/profils, calcul des scores de réputation, modération des signalements, archivage automatique des opportunités expirées, envoi des notifications groupées. Les fonctions sont déclenchées par événements Firestore, par HTTP (webhooks), ou par scheduler (cron) pour les tâches récurrentes comme l'expiration des offres.
+
+**Cloud Scheduler pour les tâches récurrentes**
+Tous les jours à minuit : archivage des opportunités dont la date limite est dépassée. Toutes les semaines : calcul et mise à jour des scores de réputation. Ces jobs appellent tes Cloud Functions via HTTP trigger.
+
+---
+
+## 7. Notifications
+
+**Firebase Cloud Messaging (FCM)**
+Notifications push sur Android et iOS depuis Cloud Functions. Tu crées des topics FCM par espace communautaire (`/topics/ucad-informatique-l2`) pour envoyer des annonces groupées sans itérer sur chaque token. Les notifications individuelles (réponse à une question, validation de compte) ciblent le token FCM stocké dans le profil Firestore de l'utilisateur.
+
+**Termii ou Africa's Talking pour les SMS critiques**
+Firebase Auth gère l'OTP SMS d'inscription, mais pour les notifications critiques quand l'utilisateur n'a pas activé les push (compte validé, offre urgente), tu envoies un SMS via Termii ou Africa's Talking — ces deux services ont une couverture Sénégal/Afrique de l'Ouest fiable et des prix en CFA. Termii a une API REST simple, tu l'appelles depuis une Cloud Function.
+
+---
+
+## 8. Paiements (Phase 3 — Marketplace)
+
+**Wave et Orange Money via leurs APIs directes**
+C'est comment paient tes utilisateurs au Sénégal. Wave a une API marchande documentée, Orange Money aussi via leur portail développeur. Tu implémentes les deux. Stripe ou PayPal ne sont pas la priorité — moins de 10% de tes utilisateurs ont une carte bancaire.
+
+**Commission marketplace**
+Tes Cloud Functions calculent la commission (3 à 5%) et initient le transfert vers le compte vendeur via les APIs Wave/Orange Money après confirmation de réception par l'acheteur. Toutes les transactions sont enregistrées dans Firestore avec statut, montant, commission, et timestamps.
+
+---
+
+## 9. Monitoring et analytics
+
+**Firebase Analytics**
+Intégré nativement dans Expo/React Native. Tu mesures les écrans visités, les documents partagés, les opportunités consultées, le taux de complétion de l'inscription. Gratuit, sans configuration supplémentaire.
+
+**Sentry pour les erreurs**
+Toutes les erreurs de l'app mobile et du web remontent dans Sentry avec le contexte (utilisateur, action en cours, stack trace). Indispensable pour détecter les crashs sur les appareils d'entrée de gamme. Plan gratuit jusqu'à 5 000 erreurs par mois.
+
+**Firebase Performance Monitoring**
+Mesure les temps de chargement des écrans, les latences des requêtes Firestore, et les temps d'upload de fichiers. Critique pour détecter les problèmes de performance sur réseau lent avant qu'ils deviennent des plaintes utilisateurs.
+
+---
+
+## 10. Infrastructure et déploiement
+
+**GitHub + GitHub Actions pour le CI/CD**
+Chaque push sur `main` déclenche : les tests, le build Next.js et déploiement Vercel automatique pour le web, le build EAS pour les mises à jour OTA mobile. Les mises à jour critiques passent par EAS Update (sans repasser par le Play Store), les mises à jour majeures par un nouveau build EAS soumis au Play Store.
+
+**Environnements séparés**
+Trois Firebase projects : `kamplink-dev`, `kamplink-staging`, `kamplink-prod`. Les Cloud Functions et les règles Firestore sont déployées via Firebase CLI depuis GitHub Actions. Jamais de modification directe en production.
+
+---
+
+## Récapitulatif par fonctionnalité
+
+Inscription et OTP SMS → Firebase Authentication. Vérification carte étudiante → Firebase Storage + Vision API + backoffice Next.js + Cloud Functions. Profil et badge vérifié → Firestore + custom claims Firebase Auth. Espaces communautaires et canaux → Firestore temps réel + Firebase Storage pour les PDFs. Recherche de documents et d'opportunités → Algolia synchronisé depuis Firestore. Notifications push → FCM. Notifications SMS critiques → Termii ou Africa's Talking. Matching opportunités/profil → Cloud Functions + tags Firestore indexés. Score de réputation → Cloud Functions + Cloud Scheduler. Backoffice admin → Next.js + Firebase Admin SDK. Marketplace et paiements → Wave API + Orange Money API + Cloud Functions. Monitoring → Firebase Analytics + Sentry + Firebase Performance. Déploiement → GitHub Actions + EAS Build + Vercel.
