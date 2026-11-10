@@ -64,3 +64,9 @@ backend/storage/
 backend/.env
 backend/.env.*
 !backend/.env.example
+
+backend_backup_*/
+backend/storage/
+backend/.env
+backend/.env.*
+!backend/.env.example
