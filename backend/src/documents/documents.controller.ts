@@ -30,12 +30,14 @@ export class DocumentsController {
     @Param('id') canalId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('categoryId') categoryId?: string,
   ) {
     return this.documentsService.getDocumentsByCanal(
       req.user,
       canalId,
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 20,
+      categoryId,
     );
   }
 

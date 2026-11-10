@@ -20,10 +20,6 @@ import { UpdateSignalementDto } from './dto/update-signalement.dto';
 export class SignalementsController {
   constructor(private signalementsService: SignalementsService) {}
 
-  // ─────────────────────────────────────────
-  // ROUTES UTILISATEUR
-  // ─────────────────────────────────────────
-
   @Post()
   @UseGuards(AuthGuard)
   createSignalement(@Request() req, @Body() dto: CreateSignalementDto) {
@@ -32,11 +28,7 @@ export class SignalementsController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  getMySignalements(
-    @Request() req,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
+  getMySignalements(@Request() req, @Query('page') page?: string, @Query('limit') limit?: string) {
     return this.signalementsService.getMySignalements(
       req.user.id,
       page ? parseInt(page) : 1,
@@ -44,19 +36,17 @@ export class SignalementsController {
     );
   }
 
-  // ─────────────────────────────────────────
-  // ROUTES ADMIN / MODÉRATION
-  // ─────────────────────────────────────────
-
   @Get()
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'superadmin', 'delegate')
   getAllSignalements(
+    @Request() req,
     @Query('statut') statut?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
     return this.signalementsService.getAllSignalements(
+      req.user,
       statut,
       page ? parseInt(page) : 1,
       limit ? parseInt(limit) : 20,
@@ -73,18 +63,14 @@ export class SignalementsController {
   @Get(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'superadmin', 'delegate')
-  getSignalementById(@Param('id') signalementId: string) {
-    return this.signalementsService.getSignalementById(signalementId);
+  getSignalementById(@Request() req, @Param('id') signalementId: string) {
+    return this.signalementsService.getSignalementById(req.user, signalementId);
   }
 
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'superadmin', 'delegate')
-  updateSignalement(
-    @Param('id') signalementId: string,
-    @Request() req,
-    @Body() dto: UpdateSignalementDto,
-  ) {
-    return this.signalementsService.updateSignalement(signalementId, dto, req.user.id);
+  updateSignalement(@Param('id') signalementId: string, @Request() req, @Body() dto: UpdateSignalementDto) {
+    return this.signalementsService.updateSignalement(signalementId, dto, req.user.id, req.user.role);
   }
 }

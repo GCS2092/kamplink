@@ -1,395 +1,139 @@
-# 📚 CampusLink Backend - Documentation Complète
-
-> **Dernière mise à jour :** Avril 2025 | **Version :** 1.0.0
-
----
-
-## 📋 TABLE DES MATIÈRES
-
-1. [Vue d'Ensemble](#1-vue-densemble)
-2. [Stack Technique](#2-stack-technique)
-3. [Architecture Globale](#3-architecture-globale)
-4. [Structure du Projet](#4-structure-du-projet)
-5. [Modules Métier](#5-modules-métier)
-6. [Services Partagés](#6-services-partagés)
-7. [Sécurité](#7-sécurité)
-8. [Redis & Cache](#8-redis--cache)
-9. [Base de Données](#9-base-de-données)
-10. [Documentation Existante](#10-documentation-existante)
-
----
-
-## 1. Vue d'Ensemble
-
-CampusLink est une **plateforme sociale académique** pour étudiants sénégalais.
-
-### Philosophie Architecture
-- ✅ Source unique de vérité : PostgreSQL
-- ✅ Cache temporaire uniquement : Redis (Upstash)
-- ✅ Fail Open : L'application fonctionne sans Redis
-- ✅ Zero Trust : Validation stricte à tous les niveaux
-- ✅ TTL obligatoire : Aucune donnée persistante dans Redis
-
----
-
-## 2. Stack Technique
-
-| Technologie | Version | Rôle |
-|-------------|---------|------|
-| **NestJS** | ^11.0.1 | Framework Node.js modulaire |
-| **TypeScript** | ^5.9.3 | Langage typé |
-| **PostgreSQL** | 14+ | Base de données principale |
-| **Prisma** | ^6.16.3 | ORM et migrations |
-| **Upstash Redis** | ^1.34.7 | Cache temporaire via REST API |
-| **Firebase Admin** | ^13.7.0 | Authentification JWT |
-| **Bull** | ^4.16.5 | Queue system pour jobs |
-| **Socket.io** | ^4.8.1 | WebSocket bidirectionnel |
-| **Elasticsearch** | ^8.17.0 | Moteur de recherche |
-| **Sentry** | ^9.0.0 | Monitoring erreurs |
-
----
-
-## 3. Architecture Globale
-
-### Modules NestJS
-
-```
-AppModule (Root)
-│
-├── MODULES GLOBAUX
-│   ├── FirebaseModule    → Auth Firebase
-│   ├── PrismaModule      → Connexion DB
-│   ├── RedisModule       → Cache Upstash (GLOBAL)
-│   ├── SecurityModule    → Guards & protection
-│   ├── CommonModule      → Services partagés
-│   ├── SearchModule      → Elasticsearch
-│   └── QueueModule       → Bull jobs
-│
-├── MODULES MÉTIER
-│   ├── AuthModule        → Login/Register/Password
-│   ├── UsersModule       → Profils & Gestion users
-│   ├── EspacesModule     → Espaces communautaires
-│   ├── CanauxModule      → Canaux de discussion
-│   ├── MessagesModule    → Messages & threads
-│   ├── DocumentsModule   → Partage fichiers
-│   ├── OpportunitesModule → Offres emploi/stage
-│   ├── NotificationsModule → Push & in-app
-│   ├── SignalementsModule → Modération
-│   └── ChatModule        → WebSocket temps réel
-│
-└── MODULES MONITORING
-    └── HealthModule      → Health checks (/health)
-```
-
----
-
-## 4. Structure du Projet
-
-```
-c:\CampusLink\backend\
-├── 📁 prisma/
-│   └── schema.prisma          → Schéma complet DB (600 lignes)
-│
-├── 📁 src/
-│   ├── 📄 main.ts             → Point d'entrée (bootstrap)
-│   ├── 📄 app.module.ts       → Module racine
-│   │
-│   ├── 📁 auth/               → Authentification
-│   │   ├── auth.controller.ts
-│   │   ├── auth.service.ts
-│   │   ├── auth.guard.ts
-│   │   └── dto/
-│   │
-│   ├── 📁 users/              → Gestion utilisateurs
-│   ├── 📁 espaces/            → Espaces communautaires
-│   ├── 📁 canaux/             → Canaux de discussion
-│   ├── 📁 messages/           → Messages & réponses
-│   ├── 📁 documents/          → Partage de documents
-│   ├── 📁 opportunites/       → Opportunités professionnelles
-│   ├── 📁 notifications/      → Notifications system
-│   ├── 📁 signalements/       → Signalements & modération
-│   ├── 📁 chat/               → WebSocket chat temps réel
-│   ├── 📁 firebase/           → Configuration Firebase
-│   ├── 📁 prisma/             → Service Prisma
-│   ├── 📁 redis/              → 🔥 MODULE REDIS (NOUVEAU)
-│   │   ├── redis.service.ts       → Client Upstash
-│   │   ├── redis.module.ts          → Module global
-│   │   ├── redis-throttler.guard.ts → Rate limiting custom
-│   │   ├── redis-throttler.decorator.ts → @Throttle()
-│   │   ├── security-redis.service.ts → Anti-brute force
-│   │   ├── cache.service.ts         → Cache léger
-│   │   └── redis-health.indicator.ts → Health check
-│   ├── 📁 security/           → Sécurité
-│   ├── 📁 queue/              → Files de tâches (Bull)
-│   ├── 📁 search/             → Elasticsearch
-│   ├── 📁 health/             → Health checks
-│   └── 📁 common/             → Services communs (filters, interceptors)
-│
-├── 📁 test/                   → Tests E2E
-├── 📄 package.json            → Dépendances
-└── 📄 .env.example            → Variables d'environnement
-```
-
----
-
-## 5. Modules Métier
-
-### 5.1 AuthModule
-**Endpoints :**
-```
-POST /api/v1/auth/login              → Rate limit: 5/15min
-POST /api/v1/auth/forgot-password    → Rate limit: 3/15min
-POST /api/v1/auth/reset-password   → Rate limit: 3/15min
-```
-
-**Fonctionnalités :**
-- ✅ Login avec token Firebase
-- ✅ Création automatique de profil
-- ✅ Mot de passe oublié (token temporaire)
-- ✅ Réinitialisation mot de passe
-- ✅ Rate limiting strict via @Throttle()
-
-### 5.2 UsersModule
-**Rôles :** `student` | `delegate` | `admin` | `superadmin`
-
-**Fonctionnalités :**
-- ✅ Création/Mise à jour profil
-- ✅ Demande de vérification (carte étudiant)
-- ✅ Gestion des rôles
-- ✅ Bannissement/débannissement
-- ✅ Score de réputation
-
-### 5.3 EspacesModule
-**Hiérarchie :** Université → Filière → Niveau → Espace
-
-### 5.4 CanauxModule
-- Canaux publics/privés dans les espaces
-
-### 5.5 MessagesModule
-- Messages, réponses (threads), anonymes, épinglage, votes
-
-### 5.6 DocumentsModule
-- Upload : cours, examen, résumé, exercice
-
-### 5.7 OpportunitesModule
-- Types : stage, emploi, bourse, concours, événement
-
-### 5.8 NotificationsModule
-- Push Firebase + notifications in-app
-
-### 5.9 SignalementsModule
-- Workflow : ouvert → en cours → résolu/classé
-
-### 5.10 ChatModule
-- WebSocket temps réel avec Socket.io
-
----
-
-## 6. Services Partagés
-
-### 6.1 FirebaseService
-- ✅ Vérification tokens JWT Firebase
-- ✅ Envoi notifications push
-
-### 6.2 PrismaService
-- Connexion PostgreSQL avec lifecycle hooks
-
-### 6.3 RedisService
-**Configuration :**
-```env
-UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
-UPSTASH_REDIS_REST_TOKEN=your-token
-```
-
-**Méthodes :**
-```typescript
-await redisService.get('key');
-await redisService.set('key', 'value', 60); // TTL 60s
-await redisService.incr('counter', 60);
-await redisService.ttl('key');
-await redisService.exists('key');
-await redisService.del('key');
-```
-
-### 6.4 SecurityRedisService
-- Track login attempts (max 5 échecs / 15min)
-- Block IPs/users avec TTL
-- Reset tokens hashés (bcryptjs)
-
-### 6.5 CacheService
-- Cache profils utilisateurs (TTL 60s)
-- Cache canaux & espaces (TTL 30-120s)
-- Invalidation manuelle
-
-### 6.6 SanitizationService
-- HTML sanitization via DOMPurify
-- Tags : b, i, em, strong, p, br, ul, ol, li, a
-
----
-
-## 7. Sécurité
-
-### 7.1 AuthGuard
-```typescript
-@UseGuards(AuthGuard)
-@Get('profile')
-getProfile(@Req() req) {
-  return req.user;
-}
-```
-
-### 7.2 RedisThrottlerGuard
-```typescript
-@Throttle({ ttl: 60, limit: 5, blockDuration: 300 })
-@Post('login')
-```
-
-**Clés Redis :**
-- `rate:{ip}` → Compteur requêtes
-- `block:{ip}` → Flag blocage
-
-### 7.3 IpBlockerGuard
-- Check DB `IpBloquee` avant accès
-
-### 7.4 Headers de Sécurité (Helmet)
-```typescript
-app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
-
-app.enableCors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-});
-```
-
-### 7.5 Interceptors & Filtres
-
-| Composant | Fichier | Rôle |
-|-----------|---------|------|
-| AllExceptionsFilter | `common/filters/all-exceptions.filter.ts` | Catch toutes les exceptions, format standardisé |
-| LoggingInterceptor | `common/interceptors/logging.interceptor.ts` | Log requêtes (user, méthode, durée) |
-| ResponseTransformInterceptor | `common/interceptors/response-transform.interceptor.ts` | Wrapper réponse uniforme |
-
-**Format réponse succès :**
-```json
-{
-  "success": true,
-  "data": { ... },
-  "message": "Opération réussie",
-  "statusCode": 200,
-  "timestamp": "2025-01-15T10:30:00.000Z",
-  "path": "/api/v1/users/profile"
-}
-```
-
-**Format réponse erreur :**
-```json
-{
-  "success": false,
-  "message": "Description de l'erreur",
-  "error": "ErrorType",
-  "statusCode": 400,
-  "timestamp": "2025-01-15T10:30:00.000Z",
-  "path": "/api/v1/auth/login"
-}
-```
-
----
-
-## 8. Redis & Cache
-
-### 8.1 Architecture Redis
-
-**Règles Strictes :**
-- ✅ Données temporaires uniquement
-- ✅ TTL obligatoire sur TOUTES les clés
-- ✅ Clés compactes (préfixes courts)
-- ✅ Fail open : Redis down = app fonctionne
-- ✅ Max 250MB (Upstash Free Tier)
-
-### 8.2 Types de Clés Redis
-
-| Préfix | Usage | TTL |
-|--------|-------|-----|
-| `rate:` | Rate limiting counters | 60s |
-| `block:` | Blocage IPs/users | 300-900s |
-| `login:` | Tentatives connexion | 900s |
-| `reset:` | Tokens reset password | 600s |
-| `cache:user:` | Cache profils | 60s |
-| `cache:canal:` | Cache canaux | 30s |
-| `cache:espace:` | Cache espaces | 120s |
-
----
-
-## 9. Base de Données
-
-### 9.1 Tables Principales (Prisma)
-
-| Table | Description |
-|-------|-------------|
-| **Utilisateur** | Comptes utilisateurs (firebase_uid, rôle, banni) |
-| **Profil** | Informations profil (prénom, nom, université, filière) |
-| **Universite** | Liste universités |
-| **Filiere** | Filières par université |
-| **Espace** | Espaces communautaires |
-| **EspaceMembre** | Membres des espaces |
-| **Canal** | Canaux de discussion |
-| **CanalMembre** | Membres des canaux |
-| **Message** | Messages & réponses (type: annonce/question/ressource/discussion) |
-| **Document** | Documents partagés (type: cours/examen/résumé/exercice) |
-| **Opportunite** | Offres stage/emploi/bourse/concours |
-| **Notification** | Notifications in-app |
-| **Signalement** | Signalements (raisons: spam/inapproprié/harcèlement) |
-| **Verification** | Demandes vérification carte étudiant |
-| **TentativeConnexion** | Log sécurité login attempts |
-| **TokenResetPassword** | Tokens reset password |
-| **IpBloquee** | IPs bloquées |
-| **AuditLog** | Logs audit |
-
-### 9.2 ENUMS Principaux
-
-```prisma
-enum Role { student, delegate, admin, superadmin }
-enum Niveau { L1, L2, L3, M1, M2 }
-enum TypeMessage { annonce, question, ressource, discussion }
-enum TypeOffre { stage, emploi, bourse, concours, evenement }
-enum RaisonSignalement { spam, inapproprie, harcelement, desinformation, autre }
-enum ActionModeration { avertissement, masquer, supprimer, suspendre, bannir }
-```
-
----
-
-## 10. Documentation Existante
-
-| Fichier | Description |
-|---------|-------------|
-| `README.md` | README principal |
-| `API_README.md` | Documentation API détaillée |
-| `REDIS_ARCHITECTURE.md` | Architecture Redis (320 lignes) |
-| `UPSTASH_INTEGRATION_GUIDE.md` | Guide intégration Upstash (377 lignes) |
-| `SECURITY_IMPLEMENTATION.md` | Implémentation sécurité |
-| `AMELIORATIONS_IMPLEMENTEES.md` | Améliorations réalisées |
-| `ANALYSE_BACKEND.md` | Analyse complète backend |
-| `VALIDATION.md` | Validation & checklist |
-| `explication/DOCUMENTATION_COMPLETE.md` | Ce fichier |
-
----
-
-## 🎯 Résumé des Fichiers Clés
-
-| Fichier | Rôle |
-|---------|------|
-| `src/main.ts` | Bootstrap application (119 lignes) |
-| `src/app.module.ts` | Module racine avec tous les imports |
-| `src/redis/redis.service.ts` | Client Upstash Redis |
-| `src/redis/redis-throttler.guard.ts` | Rate limiting custom |
-| `src/auth/auth.guard.ts` | Guard authentification Firebase |
-| `src/common/filters/all-exceptions.filter.ts` | Filtre exceptions global |
-| `prisma/schema.prisma` | Schéma base de données (600 lignes) |
-| `.env.example` | Variables d'environnement complètes |
-
----
-
-**✅ Backend CampusLink complet, sécurisé et optimisé pour production !**
+# Kamplink (CampusLink) - Documentation du backend
+
+> Derniere mise a jour: 10 novembre 2026
+> Statut: **code complet pour le MVP, compile, mais non teste de bout en bout** (cles Firebase absentes).
+> Les affirmations ci-dessous decrivent ce que le code fait; "non teste" signifie qu'aucun parcours reel n'a ete execute.
+
+## 1. Vue d'ensemble
+
+Plateforme sociale academique pour etudiants senegalais: espaces par universite et filiere, canaux de discussion,
+partage de documents, opportunites (stages, emplois, bourses), entreprises partenaires, moderation.
+
+**Principes**
+- PostgreSQL est la seule source de verite; Redis (Upstash) est optionnel et ne sert qu'au rate limiting.
+- Firebase gere uniquement l'authentification (OTP telephone); l'utilisateur est cree en base a la premiere connexion.
+- La **carte etudiante est le moyen d'authentifier un etudiant**: un numero de carte = un compte, valide par un admin.
+- Moderation separee du choix de l'auteur (champ `estMasque` distinct de `estPublic` / `estActive`).
+
+## 2. Stack
+
+| Technologie | Role |
+|---|---|
+| NestJS 11, TypeScript | Framework |
+| PostgreSQL 17 + Prisma 6.16 | Base de donnees et migrations (6 dossiers de migration) |
+| Firebase Admin | Verification des tokens, notifications push (FCM) |
+| Socket.IO | Chat temps reel (namespace /chat) |
+| Upstash Redis (optionnel) | Rate limiting sur login et upload; sans Redis, l'app fonctionne (fail open) |
+| Elasticsearch (optionnel, inactif) | Prevu pour la recherche; non utilise, la recherche passe par Prisma |
+| Sentry (optionnel) | Erreurs 5xx |
+| DOMPurify | Nettoyage HTML des messages |
+
+Retire: Bull (aucun Redis TCP), reset de mot de passe, bcrypt/bcryptjs cote auth.
+
+## 3. Authentification et roles
+
+Flux: le mobile verifie l'OTP avec Firebase, envoie l'`idToken` a `POST /auth/login`; le backend cree ou retrouve l'utilisateur.
+Les routes protegees exigent `Authorization: Bearer <idToken>`. Un utilisateur banni est refuse.
+
+| Role | Pouvoirs |
+|---|---|
+| student | Lecture, participation (apres verification si RG-02 active) |
+| company | Representant d'entreprise validee: publie des opportunites rattachees a son entreprise |
+| delegate | Moderation limitee aux canaux ou il est admin/moderateur; cree des canaux dans ses espaces |
+| content_admin | Gere les categories de documents et la moderation des opportunites |
+| admin | Verifications, entreprises, espaces, signalements, bannissement (pas sur un rang egal ou superieur) |
+| superadmin | Tout, dont l'attribution des roles |
+
+**RG-02**: un compte non verifie est en lecture seule (message, vote, document, opportunite, candidature, WebSocket).
+Code present mais desactive: `ENFORCE_VERIFICATION=false` par defaut. A activer apres creation du superadmin.
+
+## 4. Verification de la carte etudiante
+
+1. `POST /uploads/carte` (multipart, champ `file`, 5 Mo, JPEG/PNG/WebP controle sur le contenu): renvoie une reference privee.
+2. `POST /users/me/verification` avec `photoCarteUrl` (cette reference) et `numeroCarte`.
+3. Le numero est normalise; il doit etre libre (un compte unique par carte). Si une liste officielle de l'universite est importee,
+   l'admin voit un indicateur "correspondance liste" (numero + nom + prenom). L'etudiant ne le voit jamais.
+4. Un admin consulte la photo (`GET /uploads/admin/verification/:id`, tracee dans audit_logs), puis approuve ou rejette.
+5. A la decision, la photo est supprimee du disque; le numero de carte est inscrit sur le compte a l'approbation.
+
+Import de la liste: `POST /admin/liste-etudiants/:universiteId` (JSON `{ rows: [{ numeroCarte, nom, prenom, filiere?, niveau? }] }`, 5000 lignes max).
+
+## 5. Endpoints (prefixe /api/v1)
+
+| Module | Routes principales |
+|---|---|
+| Auth | POST /auth/login |
+| Users | GET /users/universites, /users/universites/:id/filieres, /users/:id/public, /users/me; POST/PATCH /users/me/profile; POST/GET /users/me/verification; admin: GET /users/admin/verifications, PATCH .../verifications/:id/approve\|reject, PATCH /users/admin/:id/ban\|unban\|role |
+| Espaces | GET /espaces, /espaces/:id, /espaces/me/list; POST :id/join\|leave; admin: POST, PATCH, DELETE, GET :id/membres |
+| Canaux | GET /canaux/espace/:id, /canaux/:id, :id/membres; POST :id/join\|leave; POST /canaux; PATCH :id; DELETE :id; PATCH :id/membres/:userId/role |
+| Messages | GET /messages/canal/:id, /messages/:id, :id/reponses, canal/:id/search; POST; PATCH; DELETE; POST :id/vote; POST :id/epingle; GET/POST :id/reactions |
+| Documents | GET /documents/canal/:id (filtre categoryId), user/me, search/global, :id; POST; PATCH; DELETE; POST :id/hide\|unhide |
+| Categories | GET /document-categories; admin/content_admin: POST, PATCH, sous-categories |
+| Opportunites | GET /opportunites, :id, search/global, me/list; POST; PATCH; DELETE; admin/content_admin: POST :id/approve\|reject\|expire |
+| Candidatures | POST/GET /opportunites/:id/candidatures; GET /candidatures/me; PATCH /candidatures/:id/statut; DELETE /candidatures/:id |
+| Favoris | GET /favoris; POST /favoris; DELETE /favoris/:type/:ressourceId |
+| Entreprises | GET /entreprises, :id, me; POST; PATCH me; admin: GET admin/list, PATCH admin/:id/approve\|reject\|suspend |
+| Notifications | GET /notifications, unread-count; POST :id/read, read-all; DELETE :id, DELETE; POST/DELETE device-token |
+| Signalements | POST; GET me; admin/delegue: GET, GET :id, PATCH :id; admin: GET stats |
+| Liste etudiants | admin: POST /admin/liste-etudiants/:universiteId, GET .../count |
+| Uploads | POST /uploads/carte; admin: GET /uploads/admin/verification/:id |
+| Sante | GET /health (503 si la base est indisponible) |
+
+Documentation interactive: `/api/docs` (Swagger, partielle: un seul controleur annote).
+
+**WebSocket** (`/chat`, token dans `auth.token`): `join-canal`, `leave-canal`, `send-message`, `typing`, `mark-read`;
+evenements recus: `joined`, `left`, `new-message`, `user-joined`, `user-typing`, `messages-read`, `error`.
+Authentification a la connexion, acces au canal verifie, 20 messages / 10 s.
+
+## 6. Regles metier importantes
+
+- **Canaux prives**: lisibles par leurs membres et les admins; messages, documents, favoris et reactions suivent la meme regle.
+- **Anonymat**: l'auteur d'un message anonyme n'est visible que de lui-meme et des admins.
+- **Votes**: un vote par utilisateur et par message; un second vote identique l'annule; la reputation de l'auteur suit.
+- **Documents**: public, ou restreint par niveau et/ou filiere (visible seulement des profils correspondants; exclu de la recherche globale).
+  Masquage par un moderateur du canal (`estMasque`); l'auteur peut rendre son document prive (`estPublic`).
+- **Opportunites**: publiees directement, moderees ensuite (rejet = masquage). Rattachees automatiquement a l'entreprise active du representant.
+- **Entreprises**: demande, validation admin (donne le role company), rejet avec motif, suspension.
+- **Notifications**: creees en base puis push FCM sans bloquer; les appareils refuses par FCM sont desactives.
+
+## 7. Securite
+
+- Helmet, CORS limite a `FRONTEND_URL`, validation stricte (whitelist), filtre d'exceptions global (erreurs Prisma traduites).
+- Rate limit global 100 req/min (memoire, HTTP) + limites Redis sur login (5/min) et upload (10/min), sans Redis elles ne s'appliquent pas.
+- Hierarchie de moderation: ni sur soi-meme, ni sur un rang egal ou superieur.
+- Photos de cartes: stockage prive, jamais servi en statique, consultation tracee, supprimees apres decision.
+- `TRUST_PROXY` a definir derriere un reverse proxy, sinon toutes les requetes partagent l'IP du proxy.
+- Tracabilite: audit_logs (verifications, bans, roles, entreprises, imports, consultation de cartes).
+
+## 8. Base de donnees
+
+Principales tables: utilisateurs, profils, universites, filieres, espaces, espace_membres, canaux, canal_membres (role),
+messages, votes_message, message_reactions, documents, document_categories, document_subcategories, opportunites,
+opportunite_tags, candidatures, entreprises, favoris, verifications, liste_etudiants, signalements, notifications,
+tokens_appareil, audit_logs, tentatives_connexion, ips_bloques.
+
+Tables presentes mais inutilisees: jobs, actions_moderation, articles_marche, tokens_reset_password.
+Colonnes de l'ancienne base volontairement absentes: password_hash, must_change_password (auth par mot de passe non reprise).
+
+Deux bases locales existent: `Kamplink_lot3` (utilisee par ce code) et `Kamplink` (ancienne version plus avancee, a conserver).
+
+## 9. Configuration (.env)
+
+Obligatoires: `DATABASE_URL`, `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FRONTEND_URL`.
+Optionnelles: `UPSTASH_REDIS_REST_URL/TOKEN`, `SENTRY_DSN`, `ELASTICSEARCH_URL`, `TRUST_PROXY`, `ENFORCE_VERIFICATION`,
+`UPLOAD_DIR`, `SEED_ADMIN_FIREBASE_UID`, `SEED_ADMIN_PHONE`.
+En production sans configuration Firebase valide, l'application refuse de demarrer; en developpement elle demarre sans (routes protegees en 401).
+
+## 10. Limites connues
+
+- Aucun test automatise utile (un seul test modele); aucun parcours reel execute.
+- Les documents de cours restent des URL libres (pas d'upload hors cartes).
+- Stockage local: ne survit pas aux hebergeurs a disque ephemere.
+- Lecture sans connexion encore possible pour /opportunites et /espaces.
+- Elasticsearch et emails: non utilises.
+
+## 11. Autres documents
+
+`SUIVI.md` (historique et reste a faire), `ETAPES.md` (mise en route et feuille de route), `API_README.md`, `REDIS_ARCHITECTURE.md`,
+`UPSTASH_INTEGRATION_GUIDE.md`, `SECURITY_IMPLEMENTATION.md`, `VALIDATION.md`, `AMELIORATIONS_IMPLEMENTEES.md`, `ANALYSE_BACKEND.md`.
+**Attention**: ces six derniers datent d'avant les lots 1 a 4c; ils decrivent notamment un reset de mot de passe, Bull et Elasticsearch qui n'existent plus ou ne servent pas. Ils sont a realigner ou archiver.

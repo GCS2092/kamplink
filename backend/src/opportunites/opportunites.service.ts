@@ -219,9 +219,16 @@ export class OpportunitesService {
   // ─────────────────────────────────────────
 
   async createOpportunite(userId: string, dto: CreateOpportuniteDto) {
+    // Entreprise active du representant: rattachement automatique
+    const ent = await this.prisma.entreprise.findFirst({
+      where: { representantId: userId, statut: 'active' },
+      select: { id: true, nom: true },
+    });
+
     const opportunite = await this.prisma.opportunite.create({
       data: {
         auteurId: userId,
+        entrepriseId: ent?.id,
         titre: dto.titre,
         description: dto.description,
         entreprise: dto.entreprise,
