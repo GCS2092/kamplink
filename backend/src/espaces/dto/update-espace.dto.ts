@@ -6,10 +6,6 @@ export class UpdateEspaceDto {
   nom?: string;
 
   @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
   @IsBoolean()
   estPublic?: boolean;
 

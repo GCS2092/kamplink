@@ -2,267 +2,190 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CanalAccessService, MODERATOR_ROLES } from '../common/services/canal-access.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 
+type Actor = { id: string; role: string };
+
+const TYPES_FICHIER = ['cours', 'exam', 'resume', 'exercice', 'autre'];
+
+const UPLOADER = {
+  select: {
+    id: true,
+    profil: {
+      select: { prenom: true, nom: true, avatarUrl: true, statutVerification: true },
+    },
+  },
+};
+
+function paginate(page: number, limit: number) {
+  const p = Math.max(1, Number.isFinite(page) ? page : 1);
+  const l = Math.min(Math.max(1, Number.isFinite(limit) ? limit : 20), 100);
+  return { page: p, limit: l, skip: (p - 1) * l };
+}
+
+function meta(total: number, pg: { page: number; limit: number }) {
+  return { total, page: pg.page, limit: pg.limit, totalPages: Math.ceil(total / pg.limit) };
+}
+
 @Injectable()
 export class DocumentsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private canalAccess: CanalAccessService,
+    private notifications: NotificationsService,
+  ) {}
 
-  // ─────────────────────────────────────────
-  // LECTURE
-  // ─────────────────────────────────────────
+  // ---------- Lecture ----------
+  // estMasque = decision d un moderateur; estPublic = choix de l auteur (document prive)
 
-  async getDocumentsByCanal(canalId: string, page: number = 1, limit: number = 20) {
-    const canal = await this.prisma.canal.findUnique({
-      where: { id: canalId },
-    });
-    if (!canal) throw new NotFoundException('Canal introuvable');
-
-    const skip = (page - 1) * limit;
-
-    const [documents, total] = await Promise.all([
-      this.prisma.document.findMany({
-        where: {
-          canalId,
-          deletedAt: null,
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        include: {
-          uploader: {
-            select: {
-              id: true,
-              profil: {
-                select: {
-                  prenom: true,
-                  nom: true,
-                  avatarUrl: true,
-                  statutVerification: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-      this.prisma.document.count({
-        where: { canalId, deletedAt: null },
-      }),
-    ]);
-
-    return {
-      data: documents,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async getDocumentById(documentId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-      include: {
-        uploader: {
-          select: {
-            id: true,
-            profil: {
-              select: {
-                prenom: true,
-                nom: true,
-                avatarUrl: true,
-                statutVerification: true,
-              },
-            },
-          },
-        },
-        canal: {
-          select: { id: true, nom: true, espaceId: true },
-        },
-        _count: {
-          select: { signalements: true },
-        },
-      },
-    });
-
-    if (!document || document.deletedAt) {
-      throw new NotFoundException('Document introuvable');
-    }
-
-    // Incrémenter les vues
-    await this.prisma.document.update({
-      where: { id: documentId },
-      data: { nbTelechargements: { increment: 1 } },
-    });
-
-    return document;
-  }
-
-  async getDocumentsByUser(userId: string, page: number = 1, limit: number = 20) {
-    const skip = (page - 1) * limit;
-
-    const [documents, total] = await Promise.all([
-      this.prisma.document.findMany({
-        where: {
-          uploaderId: userId,
-          deletedAt: null,
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        include: {
-          canal: {
-            select: { id: true, nom: true },
-          },
-        },
-      }),
-      this.prisma.document.count({
-        where: { uploaderId: userId, deletedAt: null },
-      }),
-    ]);
-
-    return {
-      data: documents,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
-  }
-
-  async searchDocuments(query: string, typeFichier?: string, page: number = 1, limit: number = 20) {
-    const skip = (page - 1) * limit;
-
-    const where: any = {
+  async getDocumentsByCanal(user: Actor, canalId: string, page: number = 1, limit: number = 20) {
+    await this.canalAccess.assertCanAccess(user, canalId);
+    const pg = paginate(page, limit);
+    const where = {
+      canalId,
       deletedAt: null,
-      estPublic: true,
-      OR: [
-        { titre: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-      ],
+      estMasque: false,
+      OR: [{ estPublic: true }, { uploaderId: user.id }],
     };
-
-    if (typeFichier) {
-      where.typeFichier = typeFichier;
-    }
 
     const [documents, total] = await Promise.all([
       this.prisma.document.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
+        skip: pg.skip,
+        take: pg.limit,
+        include: { uploader: UPLOADER },
+      }),
+      this.prisma.document.count({ where }),
+    ]);
+
+    return { data: documents, meta: meta(total, pg) };
+  }
+
+  async getDocumentById(user: Actor, documentId: string) {
+    const document = await this.prisma.document.findUnique({
+      where: { id: documentId },
+      include: {
+        uploader: UPLOADER,
+        canal: { select: { id: true, nom: true, espaceId: true } },
+        _count: { select: { signalements: true } },
+      },
+    });
+    if (!document || document.deletedAt) throw new NotFoundException('Document introuvable');
+
+    const isMod = MODERATOR_ROLES.includes(user.role);
+    const isOwner = document.uploaderId === user.id;
+    if ((document.estMasque || !document.estPublic) && !isMod && !isOwner) {
+      throw new NotFoundException('Document introuvable');
+    }
+    if (document.canalId) {
+      await this.canalAccess.assertCanAccess(user, document.canalId);
+    }
+
+    if (!isOwner) {
+      await this.prisma.document.update({
+        where: { id: documentId },
+        data: { nbTelechargements: { increment: 1 } },
+      });
+    }
+    return document;
+  }
+
+  async getDocumentsByUser(userId: string, page: number = 1, limit: number = 20) {
+    const pg = paginate(page, limit);
+    const where = { uploaderId: userId, deletedAt: null };
+
+    const [documents, total] = await Promise.all([
+      this.prisma.document.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: pg.skip,
+        take: pg.limit,
+        include: { canal: { select: { id: true, nom: true } } },
+      }),
+      this.prisma.document.count({ where }),
+    ]);
+
+    return { data: documents, meta: meta(total, pg) };
+  }
+
+  async searchDocuments(query: string, typeFichier?: string, page: number = 1, limit: number = 20) {
+    if (!query || !query.trim()) throw new BadRequestException('Paramètre q requis');
+    if (typeFichier && !TYPES_FICHIER.includes(typeFichier)) {
+      throw new BadRequestException('Type de fichier invalide');
+    }
+    const pg = paginate(page, limit);
+
+    const where: any = {
+      deletedAt: null,
+      estPublic: true,
+      estMasque: false,
+      AND: [{ OR: [{ canalId: null }, { canal: { estPublic: true, estActif: true } }] }],
+      OR: [
+        { titre: { contains: query.trim(), mode: 'insensitive' } },
+        { description: { contains: query.trim(), mode: 'insensitive' } },
+      ],
+    };
+    if (typeFichier) where.typeFichier = typeFichier;
+
+    const [documents, total] = await Promise.all([
+      this.prisma.document.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: pg.skip,
+        take: pg.limit,
         include: {
-          uploader: {
-            select: {
-              id: true,
-              profil: {
-                select: {
-                  prenom: true,
-                  nom: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-          },
-          canal: {
-            select: { id: true, nom: true },
-          },
+          uploader: { select: { id: true, profil: { select: { prenom: true, nom: true, avatarUrl: true } } } },
+          canal: { select: { id: true, nom: true } },
         },
       }),
       this.prisma.document.count({ where }),
     ]);
 
-    return {
-      data: documents,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return { data: documents, meta: meta(total, pg) };
   }
 
-  // ─────────────────────────────────────────
-  // CRÉATION / MODIFICATION
-  // ─────────────────────────────────────────
+  // ---------- Creation / modification ----------
 
-  async createDocument(userId: string, dto: CreateDocumentDto) {
-    // Vérifier l'accès au canal si spécifié
+  async createDocument(user: Actor, dto: CreateDocumentDto) {
     if (dto.canalId) {
-      const canal = await this.prisma.canal.findUnique({
-        where: { id: dto.canalId },
-      });
-      if (!canal) throw new NotFoundException('Canal introuvable');
-
-      // Vérifier si canal privé
-      if (!canal.estPublic) {
-        const member = await this.prisma.canalMembre.findUnique({
-          where: {
-            canalId_utilisateurId: {
-              canalId: dto.canalId,
-              utilisateurId: userId,
-            },
-          },
-        });
-        if (!member) {
-          throw new ForbiddenException('Canal privé - accès réservé');
-        }
-      }
+      await this.canalAccess.assertCanAccess(user, dto.canalId);
     }
 
-    const document = await this.prisma.document.create({
-      data: {
-        canalId: dto.canalId,
-        uploaderId: userId,
-        titre: dto.titre,
-        description: dto.description,
-        typeFichier: dto.typeFichier,
-        urlFichier: dto.urlFichier,
-        mimeType: dto.mimeType,
-        tailleOctets: dto.tailleOctets,
-        estPublic: dto.estPublic ?? true,
-      },
-      include: {
-        uploader: {
-          select: {
-            id: true,
-            profil: {
-              select: {
-                prenom: true,
-                nom: true,
-              },
-            },
-          },
+    // Document + point de reputation (RG-06) dans la meme transaction
+    const [document] = await this.prisma.$transaction([
+      this.prisma.document.create({
+        data: {
+          canalId: dto.canalId,
+          uploaderId: user.id,
+          titre: dto.titre,
+          description: dto.description,
+          typeFichier: dto.typeFichier,
+          urlFichier: dto.urlFichier,
+          mimeType: dto.mimeType,
+          tailleOctets: dto.tailleOctets,
+          estPublic: dto.estPublic ?? true,
         },
-      },
-    });
-
-    // RG-06 : +1 au score de réputation
-    await this.prisma.profil.update({
-      where: { utilisateurId: userId },
-      data: { scoreReputation: { increment: 1 } },
-    });
+        include: { uploader: UPLOADER },
+      }),
+      this.prisma.profil.updateMany({
+        where: { utilisateurId: user.id },
+        data: { scoreReputation: { increment: 1 } },
+      }),
+    ]);
 
     return document;
   }
 
   async updateDocument(userId: string, documentId: string, dto: UpdateDocumentDto) {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-    });
-    if (!document || document.deletedAt) {
-      throw new NotFoundException('Document introuvable');
-    }
-
+    const document = await this.prisma.document.findUnique({ where: { id: documentId } });
+    if (!document || document.deletedAt) throw new NotFoundException('Document introuvable');
     if (document.uploaderId !== userId) {
       throw new ForbiddenException('Vous ne pouvez modifier que vos propres documents');
     }
@@ -278,49 +201,47 @@ export class DocumentsService {
   }
 
   async deleteDocument(userId: string, documentId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-    });
-    if (!document || document.deletedAt) {
-      throw new NotFoundException('Document introuvable');
-    }
-
+    const document = await this.prisma.document.findUnique({ where: { id: documentId } });
+    if (!document || document.deletedAt) throw new NotFoundException('Document introuvable');
     if (document.uploaderId !== userId) {
       throw new ForbiddenException('Vous ne pouvez supprimer que vos propres documents');
     }
 
-    // Soft delete
     return this.prisma.document.update({
       where: { id: documentId },
       data: { deletedAt: new Date() },
     });
   }
 
-  // ─────────────────────────────────────────
-  // ADMIN / MODÉRATION
-  // ─────────────────────────────────────────
+  // ---------- Moderation ----------
 
-  async hideDocument(documentId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-    });
-    if (!document) throw new NotFoundException('Document introuvable');
+  async hideDocument(user: Actor, documentId: string) {
+    const document = await this.prisma.document.findUnique({ where: { id: documentId } });
+    if (!document || document.deletedAt) throw new NotFoundException('Document introuvable');
+    await this.canalAccess.assertCanModerate(user, document.canalId);
 
-    return this.prisma.document.update({
+    const updated = await this.prisma.document.update({
       where: { id: documentId },
-      data: { estPublic: false },
+      data: { estMasque: true },
     });
+    this.notifications.notifySafe(
+      document.uploaderId,
+      'moderation',
+      'Document masqué',
+      `Votre document « ${document.titre} » a été masqué par la modération.`,
+      { documentId },
+    );
+    return updated;
   }
 
-  async unhideDocument(documentId: string) {
-    const document = await this.prisma.document.findUnique({
-      where: { id: documentId },
-    });
-    if (!document) throw new NotFoundException('Document introuvable');
+  async unhideDocument(user: Actor, documentId: string) {
+    const document = await this.prisma.document.findUnique({ where: { id: documentId } });
+    if (!document || document.deletedAt) throw new NotFoundException('Document introuvable');
+    await this.canalAccess.assertCanModerate(user, document.canalId);
 
     return this.prisma.document.update({
       where: { id: documentId },
-      data: { estPublic: true },
+      data: { estMasque: false },
     });
   }
 }

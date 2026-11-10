@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSignalementDto } from './dto/create-signalement.dto';
 import { UpdateSignalementDto } from './dto/update-signalement.dto';
@@ -14,7 +14,7 @@ export class SignalementsService {
   async createSignalement(userId: string, dto: CreateSignalementDto) {
     // Vérifier qu'il y a au moins une cible
     if (!dto.cibleUserId && !dto.messageId && !dto.documentId && !dto.opportuniteId) {
-      throw new NotFoundException('Vous devez spécifier une cible pour le signalement');
+      throw new BadRequestException('Vous devez spécifier une cible pour le signalement');
     }
 
     return this.prisma.signalement.create({
@@ -48,6 +48,8 @@ export class SignalementsService {
     page: number = 1,
     limit: number = 20,
   ) {
+    page = Math.max(1, page || 1);
+    limit = Math.min(Math.max(1, limit || 20), 100);
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -123,6 +125,8 @@ export class SignalementsService {
   // ─────────────────────────────────────────
 
   async getMySignalements(userId: string, page: number = 1, limit: number = 20) {
+    page = Math.max(1, page || 1);
+    limit = Math.min(Math.max(1, limit || 20), 100);
     const skip = (page - 1) * limit;
 
     const [signalements, total] = await Promise.all([
@@ -175,7 +179,6 @@ export class SignalementsService {
       where: { id: signalementId },
       data: {
         ...(dto.statut && { statut: dto.statut }),
-        ...(dto.resolutionNotes && { resolutionNotes: dto.resolutionNotes }),
         ...(dto.statut === 'resolu' && { resoluLe: new Date() }),
       },
     });

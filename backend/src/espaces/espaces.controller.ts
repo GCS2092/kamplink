@@ -48,7 +48,7 @@ export class EspacesController {
   @Post(':id/join')
   @UseGuards(AuthGuard)
   joinEspace(@Param('id') espaceId: string, @Request() req) {
-    return this.espacesService.joinEspace(req.user.id, espaceId);
+    return this.espacesService.joinEspace(req.user, espaceId);
   }
 
   @Post(':id/leave')
@@ -63,14 +63,14 @@ export class EspacesController {
 
   @Post()
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin', 'superadmin', 'delegate')
+  @Roles('admin', 'superadmin')
   createEspace(@Request() req, @Body() dto: CreateEspaceDto) {
     return this.espacesService.createEspace(req.user.id, dto);
   }
 
   @Patch(':id')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin', 'superadmin', 'delegate')
+  @Roles('admin', 'superadmin')
   updateEspace(@Param('id') espaceId: string, @Body() dto: UpdateEspaceDto) {
     return this.espacesService.updateEspace(espaceId, dto);
   }
@@ -84,7 +84,7 @@ export class EspacesController {
 
   @Get(':id/membres')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin', 'superadmin', 'delegate')
+  @Roles('admin', 'superadmin')
   getEspaceMembers(@Param('id') espaceId: string) {
     return this.espacesService.getEspaceMembers(espaceId);
   }

@@ -59,3 +59,9 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 firebase-service-account.json
 get-token.js
 test.rest
+*.bak
+.env.bak*
+*.sql.bak
+
+# Fichiers televerses (photos de cartes: donnees personnelles)
+storage/

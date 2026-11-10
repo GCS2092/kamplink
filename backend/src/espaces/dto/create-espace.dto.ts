@@ -8,10 +8,6 @@ export class CreateEspaceDto {
   typeEspace!: string;
 
   @IsOptional()
-  @IsString()
-  description?: string;
-
-  @IsOptional()
   @IsUUID()
   universiteId?: string;
 

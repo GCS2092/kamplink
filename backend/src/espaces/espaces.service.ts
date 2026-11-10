@@ -36,7 +36,7 @@ export class EspacesService {
         universite: { select: { id: true, nom: true, ville: true } },
         filiere: { select: { id: true, nom: true } },
         canaux: {
-          where: { estActif: true },
+          where: { estActif: true, estPublic: true },
           orderBy: { nom: 'asc' },
           include: {
             _count: {
@@ -85,11 +85,15 @@ export class EspacesService {
   // REJOINDRE / QUITTER UN ESPACE
   // ─────────────────────────────────────────
 
-  async joinEspace(userId: string, espaceId: string) {
+  async joinEspace(user: any, espaceId: string) {
+    const userId = user.id;
     const espace = await this.prisma.espace.findUnique({
       where: { id: espaceId },
     });
-    if (!espace) throw new NotFoundException('Espace introuvable');
+    if (!espace || !espace.estActif) throw new NotFoundException('Espace introuvable');
+    if (!espace.estPublic && !['admin', 'superadmin'].includes(user.role)) {
+      throw new ForbiddenException('Espace privé - adhésion sur invitation');
+    }
 
     // Vérifier si déjà membre
     const existing = await this.prisma.espaceMembre.findUnique({
@@ -163,7 +167,6 @@ export class EspacesService {
       where: { id: espaceId },
       data: {
         ...(dto.nom && { nom: dto.nom }),
-        ...(dto.description && { description: dto.description }),
         ...(dto.estPublic !== undefined && { estPublic: dto.estPublic }),
         ...(dto.estActif !== undefined && { estActif: dto.estActif }),
       },

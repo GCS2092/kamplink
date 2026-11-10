@@ -4,8 +4,4 @@ export class UpdateMessageDto {
   @IsOptional()
   @IsString()
   contenu?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  estMasque?: boolean;
 }

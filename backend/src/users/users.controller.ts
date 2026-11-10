@@ -17,6 +17,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SubmitVerificationDto } from './dto/submit-verification.dto';
 import { RejectVerificationDto } from './dto/reject-verification.dto';
 import { BanUserDto } from './dto/ban-user.dto';
+import { SetRoleDto } from './dto/set-role.dto';
 
 // ─────────────────────────────────────────
 // ROUTES PUBLIQUES (pas besoin d'être connecté)
@@ -123,7 +124,15 @@ export class UsersController {
     @Request() req,
     @Body() dto: BanUserDto,
   ) {
-    return this.usersService.banUser(userId, req.user.id, dto.raison);
+    return this.usersService.banUser(userId, req.user, dto.raison);
+  }
+
+  // Attribuer un rôle (superadmin uniquement)
+  @Patch('admin/:id/role')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles('superadmin')
+  setRole(@Param('id') userId: string, @Request() req, @Body() dto: SetRoleDto) {
+    return this.usersService.setRole(userId, dto.role, req.user);
   }
 
   // Débannir un utilisateur
@@ -131,6 +140,6 @@ export class UsersController {
   @UseGuards(AuthGuard, RolesGuard)
   @Roles('admin', 'superadmin')
   unbanUser(@Param('id') userId: string, @Request() req) {
-    return this.usersService.unbanUser(userId, req.user.id);
+    return this.usersService.unbanUser(userId, req.user);
   }
 }

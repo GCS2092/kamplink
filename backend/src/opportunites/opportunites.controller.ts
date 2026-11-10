@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { OpportunitesService } from './opportunites.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { VerifiedGuard } from '../common/guards/verified.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CreateOpportuniteDto } from './dto/create-opportunite.dto';
@@ -83,7 +84,7 @@ export class OpportunitesController {
   }
 
   @Post()
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, VerifiedGuard)
   createOpportunite(@Request() req, @Body() dto: CreateOpportuniteDto) {
     return this.opportunitesService.createOpportunite(req.user.id, dto);
   }
@@ -110,21 +111,21 @@ export class OpportunitesController {
 
   @Post(':id/approve')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin', 'superadmin', 'delegate')
+  @Roles('admin', 'superadmin', 'content_admin')
   approveOpportunite(@Param('id') opportuniteId: string) {
     return this.opportunitesService.approveOpportunite(opportuniteId);
   }
 
   @Post(':id/reject')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin', 'superadmin', 'delegate')
+  @Roles('admin', 'superadmin', 'content_admin')
   rejectOpportunite(@Param('id') opportuniteId: string) {
     return this.opportunitesService.rejectOpportunite(opportuniteId);
   }
 
   @Post(':id/expire')
   @UseGuards(AuthGuard, RolesGuard)
-  @Roles('admin', 'superadmin', 'delegate')
+  @Roles('admin', 'superadmin', 'content_admin')
   markAsExpired(@Param('id') opportuniteId: string) {
     return this.opportunitesService.markAsExpired(opportuniteId);
   }

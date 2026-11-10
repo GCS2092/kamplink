@@ -8,12 +8,28 @@ export class FirebaseService implements OnModuleInit {
   onModuleInit() {
     // Initialise Firebase Admin une seule fois au démarrage
     if (!admin.apps.length) {
+      const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+      const configured =
+        process.env.FIREBASE_PROJECT_ID &&
+        process.env.FIREBASE_CLIENT_EMAIL &&
+        privateKey &&
+        privateKey.includes('BEGIN PRIVATE KEY') &&
+        !privateKey.includes('...');
+
+      if (!configured) {
+        // En production, une config Firebase absente est une erreur fatale
+        if (process.env.NODE_ENV === 'production') {
+          throw new Error('Configuration Firebase manquante ou invalide');
+        }
+        this.logger.warn('Firebase non configuré: routes protégées indisponibles (401)');
+        return;
+      }
+
       this.app = admin.initializeApp({
         credential: admin.credential.cert({
           projectId: process.env.FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          // Les \n dans la clé privée doivent être interprétés
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          privateKey,
         }),
       });
     } else {

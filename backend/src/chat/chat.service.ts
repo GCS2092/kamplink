@@ -26,7 +26,7 @@ export class ChatService {
       include: { espace: true },
     });
 
-    if (!canal) return false;
+    if (!canal || !canal.estActif) return false;
 
     // Public canal
     if (canal.estPublic) return true;

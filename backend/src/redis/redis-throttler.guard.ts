@@ -131,7 +131,7 @@ export class RedisThrottlerGuard implements CanActivate {
   private getClientIp(request: Request): string {
     const forwarded = request.headers['x-forwarded-for'];
     const ip = forwarded 
-      ? String(forwarded).split(',')[0].trim()
+      ? request.ip || 'unknown'
       : request.ip || request.connection.remoteAddress || 'unknown';
     return ip;
   }

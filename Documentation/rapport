@@ -1,0 +1,734 @@
+===== DOSSIER =====
+D:\Kamplink\kamplink\backend
+
+===== ARBORESCENCE (sans node_modules/.git/venv) =====
+explication
+prisma
+scripts
+src
+test
+.env.example
+.gitignore
+.prettierrc
+A faire
+AMELIORATIONS_IMPLEMENTEES.md
+ANALYSE_BACKEND.md
+API_README.md
+eslint.config.mjs
+nest-cli.json
+package-lock.json
+package.json
+README.md
+REDIS_ARCHITECTURE.md
+SECURITY_IMPLEMENTATION.md
+tsconfig.build.json
+tsconfig.json
+UPSTASH_INTEGRATION_GUIDE.md
+VALIDATION.md
+explication\DOCUMENTATION_COMPLETE.md
+prisma\migrations
+prisma\prisma
+prisma\schema.prisma
+prisma\migrations\20260408031557_init
+prisma\migrations\20260412080941_add_missing_tables
+prisma\migrations\migration_lock.toml
+prisma\migrations\20260408031557_init\migration.sql
+prisma\migrations\20260412080941_add_missing_tables\migration.sql
+prisma\prisma\seed.ts
+scripts\test-security.sh
+src\auth
+src\canaux
+src\chat
+src\common
+src\documents
+src\espaces
+src\firebase
+src\health
+src\messages
+src\notifications
+src\opportunites
+src\prisma
+src\queue
+src\redis
+src\search
+src\security
+src\signalements
+src\users
+src\app.controller.spec.ts
+src\app.controller.ts
+src\app.module.ts
+src\app.service.ts
+src\main.ts
+src\auth\dto
+src\auth\auth.controller.ts
+src\auth\auth.guard.ts
+src\auth\auth.module.ts
+src\auth\auth.service.ts
+src\auth\roles.decorator.ts
+src\auth\roles.guard.ts
+src\auth\dto\forgot-password.dto.ts
+src\auth\dto\reset-password.dto.ts
+src\canaux\dto
+src\canaux\canaux.controller.ts
+src\canaux\canaux.module.ts
+src\canaux\canaux.service.ts
+src\canaux\dto\create-canal.dto.ts
+src\canaux\dto\update-canal.dto.ts
+src\chat\guards
+src\chat\chat.gateway.ts
+src\chat\chat.module.ts
+src\chat\chat.service.ts
+src\chat\guards\ws-jwt.guard.ts
+src\common\filters
+src\common\interceptors
+src\common\services
+src\common\common.module.ts
+src\common\filters\all-exceptions.filter.ts
+src\common\interceptors\logging.interceptor.ts
+src\common\interceptors\response-transform.interceptor.ts
+src\common\services\sanitization.service.ts
+src\documents\dto
+src\documents\documents.controller.ts
+src\documents\documents.module.ts
+src\documents\documents.service.ts
+src\documents\dto\create-document.dto.ts
+src\documents\dto\update-document.dto.ts
+src\espaces\dto
+src\espaces\espaces.controller.ts
+src\espaces\espaces.module.ts
+src\espaces\espaces.service.ts
+src\espaces\dto\create-espace.dto.ts
+src\espaces\dto\update-espace.dto.ts
+src\firebase\firebase.module.ts
+src\firebase\firebase.service.ts
+src\health\health.controller.ts
+src\health\health.module.ts
+src\messages\dto
+src\messages\messages.controller.ts
+src\messages\messages.module.ts
+src\messages\messages.service.ts
+src\messages\dto\create-message.dto.ts
+src\messages\dto\update-message.dto.ts
+src\messages\dto\vote-message.dto.ts
+src\notifications\notifications.controller.ts
+src\notifications\notifications.module.ts
+src\notifications\notifications.service.ts
+src\opportunites\dto
+src\opportunites\opportunites.controller.ts
+src\opportunites\opportunites.module.ts
+src\opportunites\opportunites.service.ts
+src\opportunites\dto\create-opportunite.dto.ts
+src\opportunites\dto\update-opportunite.dto.ts
+src\prisma\prisma.module.ts
+src\prisma\prisma.service.ts
+src\queue\processors
+src\queue\queue.module.ts
+src\queue\queue.service.ts
+src\queue\processors\email.processor.ts
+src\queue\processors\notification.processor.ts
+src\redis\cache.service.ts
+src\redis\redis-health.indicator.ts
+src\redis\redis-throttler.decorator.ts
+src\redis\redis-throttler.guard.ts
+src\redis\redis.module.ts
+src\redis\redis.service.ts
+src\redis\security-redis.service.ts
+src\search\search.module.ts
+src\search\search.service.ts
+src\security\ip-blocker.guard.ts
+src\security\security.module.ts
+src\security\security.service.ts
+src\signalements\dto
+src\signalements\signalements.controller.ts
+src\signalements\signalements.module.ts
+src\signalements\signalements.service.ts
+src\signalements\dto\create-signalement.dto.ts
+src\signalements\dto\update-signalement.dto.ts
+src\users\dto
+src\users\users.controller.ts
+src\users\users.module.ts
+src\users\users.service.ts
+src\users\dto\ban-user.dto.ts
+src\users\dto\create-profile.dto.ts
+src\users\dto\reject-verification.dto.ts
+src\users\dto\submit-verification.dto.ts
+src\users\dto\update-profile.dto.ts
+test\app.e2e-spec.ts
+test\auth.e2e-spec.ts
+test\jest-e2e.json
+test\security.e2e-spec.ts
+
+===== TYPES DE FICHIERS =====
+.ts          90
+.md          9
+.json        6
+.sql         2
+             1
+.example     1
+.gitignore   1
+.mjs         1
+.prettierrc  1
+.prisma      1
+.sh          1
+.toml        1
+
+===== README.md =====
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
+
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
+
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+
+## Description
+
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+
+## Project setup
+
+```bash
+$ npm install
+```
+
+## Compile and run the project
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
+```
+
+## Run tests
+
+```bash
+# unit tests
+$ npm run test
+
+# e2e tests
+$ npm run test:e2e
+
+# test coverage
+$ npm run test:cov
+```
+
+## Deployment
+
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+
+```bash
+$ npm install -g @nestjs/mau
+$ mau deploy
+```
+
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+
+## Resources
+
+Check out a few resources that may come in handy when working with NestJS:
+
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+
+===== readme.md =====
+<p align="center">
+  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+</p>
+
+[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
+[circleci-url]: https://circleci.com/gh/nestjs/nest
+
+  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
+    <p align="center">
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
+<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
+<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
+<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
+<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
+  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
+    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
+  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
+</p>
+  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
+  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+
+## Description
+
+[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+
+## Project setup
+
+```bash
+$ npm install
+```
+
+## Compile and run the project
+
+```bash
+# development
+$ npm run start
+
+# watch mode
+$ npm run start:dev
+
+# production mode
+$ npm run start:prod
+```
+
+## Run tests
+
+```bash
+# unit tests
+$ npm run test
+
+# e2e tests
+$ npm run test:e2e
+
+# test coverage
+$ npm run test:cov
+```
+
+## Deployment
+
+When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+
+If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+
+```bash
+$ npm install -g @nestjs/mau
+$ mau deploy
+```
+
+With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+
+## Resources
+
+Check out a few resources that may come in handy when working with NestJS:
+
+- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
+- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
+- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
+- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
+
+===== package.json =====
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typecheck": "tsc --noEmit",
+    "prisma:generate": "prisma generate",
+    "seed": "ts-node prisma/seed.ts",
+    "prisma:migrate:dev": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^8.17.0",
+    "@nestjs/bull": "^11.0.2",
+    "@nestjs/common": "^11.0.1",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/core": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-fastify": "^11.1.18",
+    "@nestjs/platform-socket.io": "^11.0.2",
+    "@nestjs/swagger": "^11.2.7",
+    "@nestjs/terminus": "^11.0.0",
+    "@nestjs/throttler": "^6.5.0",
+    "@nestjs/websockets": "^11.0.2",
+    "@prisma/client": "^6.16.3",
+    "@sentry/node": "^9.0.0",
+    "@upstash/redis": "^1.34.7",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "bull": "^4.16.5",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "firebase": "^12.11.0",
+    "firebase-admin": "^13.7.0",
+    "helmet": "^8.1.0",
+    "isomorphic-dompurify": "^2.21.0",
+    "nestjs-pino": "^4.6.1",
+    "node-cron": "^4.2.1",
+    "pino": "^10.3.1",
+    "prisma": "^6.16.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^9.0.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.18.0",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.19.17",
+    "@types/supertest": "^6.0.2",
+    "@types/uuid": "^9.0.8",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.2",
+    "globals": "^16.0.0",
+
+===== .env.example =====
+# ============================================================
+# CampusLink Backend - Environment Configuration
+# ============================================================
+
+# ───────────────────────────────────────────────────────────
+# APPLICATION
+# ───────────────────────────────────────────────────────────
+NODE_ENV=development
+PORT=3000
+FRONTEND_URL=http://localhost:3001
+
+# ───────────────────────────────────────────────────────────
+# DATABASE (PostgreSQL via Supabase/Neon/Railway)
+# ───────────────────────────────────────────────────────────
+DATABASE_URL=postgresql://user:password@host:5432/campuslink?schema=public
+
+# ───────────────────────────────────────────────────────────
+# REDIS (Upstash - Required for Production)
+# Get your credentials at: https://console.upstash.com/redis
+# ───────────────────────────────────────────────────────────
+UPSTASH_REDIS_REST_URL=https://your-instance.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_token_here
+
+# ───────────────────────────────────────────────────────────
+# FIREBASE (Authentication)
+# Get your credentials from Firebase Console
+# ───────────────────────────────────────────────────────────
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_PRIVATE_KEY_ID=your-private-key-id
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project.iam.gserviceaccount.com
+FIREBASE_CLIENT_ID=your-client-id
+FIREBASE_AUTH_URI=https://accounts.google.com/o/oauth2/auth
+FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
+FIREBASE_AUTH_PROVIDER_CERT_URL=https://www.googleapis.com/oauth2/v1/certs
+FIREBASE_CLIENT_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/...
+
+# ───────────────────────────────────────────────────────────
+# SENTRY (Error Monitoring - Optional)
+# Get your DSN at: https://sentry.io/
+# ───────────────────────────────────────────────────────────
+SENTRY_DSN=https://xxx@yyy.ingest.sentry.io/zzz
+
+# ───────────────────────────────────────────────────────────
+# ELASTICSEARCH (Search - Optional)
+# ───────────────────────────────────────────────────────────
+ELASTICSEARCH_URL=http://localhost:9200
+
+# ───────────────────────────────────────────────────────────
+# EMAIL / SMTP (Optional - for email notifications)
+# ───────────────────────────────────────────────────────────
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+
+# ───────────────────────────────────────────────────────────
+# RATE LIMITING (Redis-based)
+# These are defaults, customize for your needs
+# ───────────────────────────────────────────────────────────
+# Global API rate limit: 100 requests per minute
+RATE_LIMIT_TTL=60
+RATE_LIMIT_MAX=100
+
+# Auth endpoints (login): 5 attempts per 15 minutes
+AUTH_RATE_LIMIT_TTL=900
+AUTH_RATE_LIMIT_MAX=5
+
+# ───────────────────────────────────────────────────────────
+# CACHE TTL (Redis)
+# All values in seconds - keep short to save memory
+# ───────────────────────────────────────────────────────────
+CACHE_PROFILE_TTL=60
+CACHE_CANAL_TTL=120
+CACHE_ESPACE_TTL=120
+
+# ───────────────────────────────────────────────────────────
+# SECURITY
+# ───────────────────────────────────────────────────────────
+# JWT Secret (if using custom JWT - not Firebase)
+
+===== tsconfig.json =====
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  }
+}
+
+===== nest-cli.json =====
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true
+  }
+}
+
+===== POINTS D'ENTREE PROBABLES =====
+src\main.ts
+
+===== ROUTES / ENDPOINTS DETECTES =====
+src\auth\auth.controller.ts:9  @Controller('auth')
+src\auth\auth.controller.ts:20  @Post('login')
+src\auth\auth.controller.ts:64  @Post('profile')
+src\auth\auth.controller.ts:80  @Post('forgot-password')
+src\auth\auth.controller.ts:103  @Post('reset-password')
+src\canaux\canaux.controller.ts:19  @Controller('canaux')
+src\canaux\canaux.controller.ts:27  @Get('espace/:id')
+src\canaux\canaux.controller.ts:32  @Get(':id')
+src\canaux\canaux.controller.ts:41  @Post(':id/join')
+src\canaux\canaux.controller.ts:47  @Post(':id/leave')
+src\canaux\canaux.controller.ts:57  @Post()
+src\canaux\canaux.controller.ts:64  @Patch(':id')
+src\canaux\canaux.controller.ts:71  @Delete(':id')
+src\canaux\canaux.controller.ts:78  @Get(':id/membres')
+src\documents\documents.controller.ts:20  @Controller('documents')
+src\documents\documents.controller.ts:28  @Get('canal/:id')
+src\documents\documents.controller.ts:41  @Get(':id')
+src\documents\documents.controller.ts:46  @Get('user/me')
+src\documents\documents.controller.ts:60  @Get('search/global')
+src\documents\documents.controller.ts:79  @Post()
+src\documents\documents.controller.ts:85  @Patch(':id')
+src\documents\documents.controller.ts:95  @Delete(':id')
+src\documents\documents.controller.ts:105  @Post(':id/hide')
+src\documents\documents.controller.ts:112  @Post(':id/unhide')
+src\espaces\espaces.controller.ts:20  @Controller('espaces')
+src\espaces\espaces.controller.ts:28  @Get()
+src\espaces\espaces.controller.ts:33  @Get(':id')
+src\espaces\espaces.controller.ts:42  @Get('me/list')
+src\espaces\espaces.controller.ts:48  @Post(':id/join')
+src\espaces\espaces.controller.ts:54  @Post(':id/leave')
+src\espaces\espaces.controller.ts:64  @Post()
+src\espaces\espaces.controller.ts:71  @Patch(':id')
+src\espaces\espaces.controller.ts:78  @Delete(':id')
+src\espaces\espaces.controller.ts:85  @Get(':id/membres')
+src\health\health.controller.ts:4  @Controller('health')
+src\health\health.controller.ts:8  @Get()
+src\messages\messages.controller.ts:23  @Controller('messages')
+src\messages\messages.controller.ts:31  @Get('canal/:id')
+src\messages\messages.controller.ts:50  @Get(':id')
+src\messages\messages.controller.ts:59  @Get(':id/reponses')
+src\messages\messages.controller.ts:64  @Get('canal/:id/search')
+src\messages\messages.controller.ts:83  @Post()
+src\messages\messages.controller.ts:94  @Patch(':id')
+src\messages\messages.controller.ts:104  @Delete(':id')
+src\messages\messages.controller.ts:114  @Post(':id/vote')
+src\messages\messages.controller.ts:128  @Post(':id/epingle')
+src\notifications\notifications.controller.ts:14  @Controller('notifications')
+src\notifications\notifications.controller.ts:19  @Get()
+src\notifications\notifications.controller.ts:32  @Get('unread-count')
+src\notifications\notifications.controller.ts:37  @Post(':id/read')
+src\notifications\notifications.controller.ts:42  @Post('read-all')
+src\notifications\notifications.controller.ts:47  @Delete(':id')
+src\notifications\notifications.controller.ts:52  @Delete()
+src\opportunites\opportunites.controller.ts:20  @Controller('opportunites')
+src\opportunites\opportunites.controller.ts:28  @Get()
+src\opportunites\opportunites.controller.ts:49  @Get(':id')
+src\opportunites\opportunites.controller.ts:54  @Get('search/global')
+src\opportunites\opportunites.controller.ts:71  @Get('me/list')
+src\opportunites\opportunites.controller.ts:85  @Post()
+src\opportunites\opportunites.controller.ts:91  @Patch(':id')
+src\opportunites\opportunites.controller.ts:101  @Delete(':id')
+src\opportunites\opportunites.controller.ts:111  @Post(':id/approve')
+src\opportunites\opportunites.controller.ts:118  @Post(':id/reject')
+src\opportunites\opportunites.controller.ts:125  @Post(':id/expire')
+src\signalements\signalements.controller.ts:19  @Controller('signalements')
+src\signalements\signalements.controller.ts:27  @Post()
+src\signalements\signalements.controller.ts:33  @Get('me')
+src\signalements\signalements.controller.ts:51  @Get()
+src\signalements\signalements.controller.ts:66  @Get('stats')
+src\signalements\signalements.controller.ts:73  @Get(':id')
+src\signalements\signalements.controller.ts:80  @Patch(':id')
+src\users\users.controller.ts:24  @Controller('users')
+src\users\users.controller.ts:29  @Get('universites')
+src\users\users.controller.ts:35  @Get('universites/:id/filieres')
+src\users\users.controller.ts:41  @Get(':id/public')
+src\users\users.controller.ts:51  @Get('me')
+src\users\users.controller.ts:58  @Post('me/profile')
+src\users\users.controller.ts:65  @Patch('me/profile')
+src\users\users.controller.ts:72  @Post('me/verification')
+src\users\users.controller.ts:79  @Get('me/verification')
+
+===== MODELES / SCHEMAS / TABLES =====
+prisma\migrations\20260408031557_init\migration.sql:47  CREATE TABLE "universites" (
+prisma\migrations\20260408031557_init\migration.sql:59  CREATE TABLE "filieres" (
+prisma\migrations\20260408031557_init\migration.sql:70  CREATE TABLE "utilisateurs" (
+prisma\migrations\20260408031557_init\migration.sql:87  CREATE TABLE "profils" (
+prisma\migrations\20260408031557_init\migration.sql:107  CREATE TABLE "espaces" (
+prisma\migrations\20260408031557_init\migration.sql:123  CREATE TABLE "espace_membres" (
+prisma\migrations\20260408031557_init\migration.sql:133  CREATE TABLE "canaux" (
+prisma\migrations\20260408031557_init\migration.sql:147  CREATE TABLE "canal_membres" (
+prisma\migrations\20260408031557_init\migration.sql:157  CREATE TABLE "messages" (
+prisma\migrations\20260408031557_init\migration.sql:176  CREATE TABLE "documents" (
+prisma\migrations\20260408031557_init\migration.sql:196  CREATE TABLE "opportunites" (
+prisma\migrations\20260408031557_init\migration.sql:219  CREATE TABLE "opportunite_tags" (
+prisma\migrations\20260408031557_init\migration.sql:228  CREATE TABLE "verifications" (
+prisma\migrations\20260408031557_init\migration.sql:242  CREATE TABLE "signalements" (
+prisma\migrations\20260408031557_init\migration.sql:259  CREATE TABLE "actions_moderation" (
+prisma\migrations\20260408031557_init\migration.sql:271  CREATE TABLE "notifications" (
+prisma\migrations\20260408031557_init\migration.sql:286  CREATE TABLE "tokens_appareil" (
+prisma\migrations\20260408031557_init\migration.sql:299  CREATE TABLE "jobs" (
+prisma\migrations\20260408031557_init\migration.sql:316  CREATE TABLE "audit_logs" (
+prisma\migrations\20260408031557_init\migration.sql:331  CREATE TABLE "ips_bloques" (
+prisma\migrations\20260408031557_init\migration.sql:342  CREATE TABLE "articles_marche" (
+prisma\migrations\20260412080941_add_missing_tables\migration.sql:9  CREATE TABLE "tentatives_connexion" (
+prisma\migrations\20260412080941_add_missing_tables\migration.sql:25  CREATE TABLE "tokens_reset_password" (
+prisma\schema.prisma:142  model Universite {
+prisma\schema.prisma:157  model Filiere {
+prisma\schema.prisma:176  model Utilisateur {
+prisma\schema.prisma:212  model Profil {
+prisma\schema.prisma:238  model Espace {
+prisma\schema.prisma:258  model EspaceMembre {
+prisma\schema.prisma:270  model Canal {
+prisma\schema.prisma:288  model CanalMembre {
+prisma\schema.prisma:304  model Message {
+prisma\schema.prisma:328  model Document {
+prisma\schema.prisma:355  model Opportunite {
+prisma\schema.prisma:381  model OpportuniteTag {
+prisma\schema.prisma:396  model Verification {
+prisma\schema.prisma:411  model Signalement {
+prisma\schema.prisma:432  model ActionModeration_ {
+prisma\schema.prisma:449  model Notification {
+prisma\schema.prisma:464  model TokenAppareil {
+prisma\schema.prisma:481  model Job {
+prisma\schema.prisma:501  model AuditLog {
+prisma\schema.prisma:520  model TentativeConnexion {
+prisma\schema.prisma:550  model TokenResetPassword {
+prisma\schema.prisma:568  model IpBloquee {
+prisma\schema.prisma:584  model ArticleMarche {
+
+===== VARIABLES D'ENV UTILISEES (noms seulement) =====
+process.env.FIREBASE_CLIENT_EMAIL
+process.env.FIREBASE_PRIVATE_KEY
+process.env.FIREBASE_PROJECT_ID
+process.env.FRONTEND_URL
+process.env.NODE_ENV
+process.env.PORT
+process.env.SENTRY_DSN
+
+===== TODO / FIXME =====
+src\queue\processors\email.processor.ts:19  // TODO: Integrate with your email service (SendGrid, AWS SES, etc.)
+src\queue\processors\email.processor.ts:56  // TODO: Implement export logic
+
+===== STATS =====
+Fichiers: 115
+Taille: 0,9 Mo
+
+
+Ton projet est le **backend d'une plateforme universitaire appelée Kamplink (nom de code interne : CampusLink)**. C'est une API **NestJS 11 / TypeScript** avec **PostgreSQL via Prisma**.
+
+## Ce que fait l'application
+
+C'est un réseau social / espace collaboratif pour étudiants, organisé comme un mélange de Discord et de plateforme campus :
+
+- **Universités et filières** : chaque utilisateur est rattaché à une université et une filière.
+- **Utilisateurs et profils** : création de profil, **vérification d'identité étudiante** (soumission puis approbation ou rejet par un admin), bannissement.
+- **Espaces et canaux** : un espace (par exemple une filière ou un groupe) contient des canaux, que l'on peut rejoindre ou quitter, avec une liste de membres.
+- **Messages** : chat avec réponses en fil, recherche, votes, épinglage, et temps réel via **WebSocket** (Socket.IO).
+- **Documents** : partage de ressources de cours dans les canaux, avec recherche globale, masquage et démasquage.
+- **Opportunités** : stages, offres et événements, avec tags et un cycle de modération (approuver, rejeter, expirer).
+- **Signalements et modération** : les utilisateurs signalent du contenu, les modérateurs traitent, avec des stats et un journal d'actions.
+- **Notifications** : in-app et push (tokens d'appareil), avec compteur de non-lus.
+- **Articles de marché** : une table existe, mais je n'ai vu aucun endpoint correspondant. C'est probablement une fonctionnalité prévue.
+
+## Stack technique
+
+| Domaine | Technologie |
+|---|---|
+| Framework | NestJS 11 (Express + Fastify installés) |
+| Base de données | PostgreSQL + Prisma 6 (2 migrations, 22 tables) |
+| Authentification | **Firebase Admin**, avec guards et rôles |
+| Cache, rate limiting | **Upstash Redis** |
+| Files d'attente | Bull (emails, notifications) |
+| Recherche | Elasticsearch (optionnel) |
+| Temps réel | Socket.IO |
+| Sécurité | Helmet, DOMPurify, blocage d'IP, tentatives de connexion, reset de mot de passe |
+| Monitoring | Sentry, Pino, health checks (Terminus) |
+| Docs API | Swagger |
+
+## État d'avancement
+
+**Points solides** : l'architecture modulaire est propre (un module par domaine), la sécurité est sérieuse (rate limiting Redis, sanitisation, blocage d'IP, tests e2e de sécurité) et le schéma de base de données est complet. Plusieurs fichiers de documentation existent (`ANALYSE_BACKEND.md`, `SECURITY_IMPLEMENTATION.md`, `REDIS_ARCHITECTURE.md`, etc.).
+
+**Points à surveiller** :
+1. **Le README est celui par défaut de NestJS.** Il ne dit rien sur ton projet. Le vrai contenu est dans `explication\DOCUMENTATION_COMPLETE.md` et `API_README.md`.
+2. **Les emails ne sont pas branchés** : `email.processor.ts` contient un TODO, donc le reset de mot de passe et les notifications par mail ne partent probablement pas encore.
+3. **L'export de données** est un TODO non implémenté.
+4. **Deux fichiers README** (`README.md` et `readme.md`) : sous Windows c'est le même fichier, mais ça posera problème sous Linux/Git.
+5. **Deux librairies de hash** (`bcrypt` et `bcryptjs`), ainsi que deux plateformes HTTP (Express et Fastify) : à nettoyer.
+6. **Les noms de variables d'environnement** : le code lit seulement 7 variables directement. Les variables Upstash, SMTP, etc. passent sans doute par `ConfigService`.
+7. **Un modèle Prisma mal nommé** : `ActionModeration_` avec un underscore final.
+8. **Un fichier "A faire"** existe à la racine : il contient probablement ta liste de tâches réelle.

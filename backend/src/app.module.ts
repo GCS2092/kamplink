@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { HttpThrottlerGuard } from './common/guards/http-throttler.guard';
 import { FirebaseModule } from './firebase/firebase.module';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,13 +17,21 @@ import { SignalementsModule } from './signalements/signalements.module';
 import { HealthModule } from './health/health.module';
 import { SecurityModule } from './security/security.module';
 import { ChatModule } from './chat/chat.module';
-import { QueueModule } from './queue/queue.module';
+import { FavorisModule } from './favoris/favoris.module';
+import { UploadsModule } from './uploads/uploads.module';
+import { EntreprisesModule } from './entreprises/entreprises.module';
+import { ListeEtudiantsModule } from './liste-etudiants/liste-etudiants.module';
+import { ReactionsModule } from './reactions/reactions.module';
+import { CandidaturesModule } from './candidatures/candidatures.module';
+import { DocumentCategoriesModule } from './document-categories/document-categories.module';
 import { SearchModule } from './search/search.module';
 import { CommonModule } from './common/common.module';
 import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+
     // Rate Limiting - 100 requêtes par minute par IP
     ThrottlerModule.forRoot({
       throttlers: [
@@ -38,8 +49,6 @@ import { RedisModule } from './redis/redis.module';
     SecurityModule,
     CommonModule,
     SearchModule,
-    QueueModule,
-
     // Modules Métier
     AuthModule,
     UsersModule,
@@ -51,9 +60,17 @@ import { RedisModule } from './redis/redis.module';
     NotificationsModule,
     SignalementsModule,
     ChatModule,
+    FavorisModule,
+    UploadsModule,
+    EntreprisesModule,
+    ListeEtudiantsModule,
+    ReactionsModule,
+    CandidaturesModule,
+    DocumentCategoriesModule,
 
     // Monitoring
     HealthModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: HttpThrottlerGuard }],
 })
 export class AppModule {}

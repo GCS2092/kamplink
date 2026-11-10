@@ -2,355 +2,285 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SanitizationService } from '../common/services/sanitization.service';
+import { CanalAccessService, MODERATOR_ROLES } from '../common/services/canal-access.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
 
+type Actor = { id: string; role: string };
+
+const AUTEUR = {
+  select: {
+    id: true,
+    profil: {
+      select: { prenom: true, nom: true, avatarUrl: true, statutVerification: true },
+    },
+  },
+};
+
+function paginate(page: number, limit: number, defLimit: number) {
+  const p = Math.max(1, Number.isFinite(page) ? page : 1);
+  const l = Math.min(Math.max(1, Number.isFinite(limit) ? limit : defLimit), 100);
+  return { page: p, limit: l, skip: (p - 1) * l };
+}
+
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private canalAccess: CanalAccessService,
+    private sanitization: SanitizationService,
+    private notifications: NotificationsService,
+  ) {}
 
-  // ─────────────────────────────────────────
-  // LECTURE DES MESSAGES
-  // ─────────────────────────────────────────
+  // Masque l'auteur d'un message anonyme (sauf pour l'auteur et les moderateurs)
+  private mask(msg: any, viewer: Actor): any {
+    if (!msg || !msg.estAnonyme) return msg;
+    const canSee = msg.auteurId === viewer.id || ['admin', 'superadmin'].includes(viewer.role);
+    if (canSee) return msg;
+    return { ...msg, auteurId: null, auteur: null };
+  }
 
-  async getMessagesByCanal(canalId: string, page: number = 1, limit: number = 50) {
-    const canal = await this.prisma.canal.findUnique({
-      where: { id: canalId },
-    });
-    if (!canal) throw new NotFoundException('Canal introuvable');
+  // ---------- Lecture ----------
 
-    const skip = (page - 1) * limit;
+  async getMessagesByCanal(user: Actor, canalId: string, page = 1, limit = 50) {
+    await this.canalAccess.assertCanAccess(user, canalId);
+    const pg = paginate(page, limit, 50);
+    const where = { canalId, estMasque: false, deletedAt: null, parentId: null };
 
     const [messages, total] = await Promise.all([
       this.prisma.message.findMany({
-        where: {
-          canalId,
-          estMasque: false,
-          parentId: null, // Messages principaux uniquement
-        },
+        where,
         orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
+        skip: pg.skip,
+        take: pg.limit,
         include: {
-          auteur: {
-            select: {
-              id: true,
-              profil: {
-                select: {
-                  prenom: true,
-                  nom: true,
-                  avatarUrl: true,
-                  statutVerification: true,
-                },
-              },
-            },
-          },
-          _count: {
-            select: { reponses: true, signalements: true },
-          },
+          auteur: AUTEUR,
+          _count: { select: { reponses: true, signalements: true } },
         },
       }),
-      this.prisma.message.count({
-        where: { canalId, estMasque: false, parentId: null },
-      }),
+      this.prisma.message.count({ where }),
     ]);
 
     return {
-      data: messages,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      data: messages.map((m) => this.mask(m, user)),
+      meta: { total, page: pg.page, limit: pg.limit, totalPages: Math.ceil(total / pg.limit) },
     };
   }
 
-  async getMessageById(messageId: string) {
+  async getMessageById(user: Actor, messageId: string) {
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
       include: {
-        auteur: {
-          select: {
-            id: true,
-            profil: {
-              select: {
-                prenom: true,
-                nom: true,
-                avatarUrl: true,
-                statutVerification: true,
-              },
-            },
-          },
-        },
-        canal: {
-          select: { id: true, nom: true, espaceId: true },
-        },
+        auteur: AUTEUR,
+        canal: { select: { id: true, nom: true, espaceId: true } },
         reponses: {
-          where: { estMasque: false },
+          where: { estMasque: false, deletedAt: null },
           orderBy: { createdAt: 'asc' },
-          include: {
-            auteur: {
-              select: {
-                id: true,
-                profil: {
-                  select: {
-                    prenom: true,
-                    nom: true,
-                    avatarUrl: true,
-                  },
-                },
-              },
-            },
-          },
+          include: { auteur: AUTEUR },
         },
-        _count: {
-          select: { reponses: true, signalements: true },
-        },
+        _count: { select: { reponses: true, signalements: true } },
       },
     });
 
-    if (!message) throw new NotFoundException('Message introuvable');
+    if (
+      !message ||
+      message.deletedAt ||
+      (message.estMasque && !MODERATOR_ROLES.includes(user.role))
+    ) {
+      throw new NotFoundException('Message introuvable');
+    }
+    await this.canalAccess.assertCanAccess(user, message.canalId);
 
-    return message;
+    return {
+      ...this.mask(message, user),
+      reponses: message.reponses.map((r) => this.mask(r, user)),
+    };
   }
 
-  async getReponses(messageId: string) {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
-    if (!message) throw new NotFoundException('Message introuvable');
+  async getReponses(user: Actor, messageId: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message || message.deletedAt) throw new NotFoundException('Message introuvable');
+    await this.canalAccess.assertCanAccess(user, message.canalId);
 
-    return this.prisma.message.findMany({
-      where: { parentId: messageId, estMasque: false },
+    const reponses = await this.prisma.message.findMany({
+      where: { parentId: messageId, estMasque: false, deletedAt: null },
       orderBy: { createdAt: 'asc' },
-      include: {
-        auteur: {
-          select: {
-            id: true,
-            profil: {
-              select: {
-                prenom: true,
-                nom: true,
-                avatarUrl: true,
-                statutVerification: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: { signalements: true },
-        },
-      },
+      include: { auteur: AUTEUR, _count: { select: { signalements: true } } },
     });
+    return reponses.map((r) => this.mask(r, user));
   }
 
-  // ─────────────────────────────────────────
-  // CRÉATION / MODIFICATION
-  // ─────────────────────────────────────────
+  async searchMessages(user: Actor, canalId: string, query: string, page = 1, limit = 20) {
+    if (!query || !query.trim()) throw new BadRequestException('Paramètre q requis');
+    await this.canalAccess.assertCanAccess(user, canalId);
+    const pg = paginate(page, limit, 20);
+    const where = {
+      canalId,
+      estMasque: false,
+      deletedAt: null,
+      contenu: { contains: query.trim(), mode: 'insensitive' as const },
+    };
 
-  async createMessage(userId: string, dto: CreateMessageDto) {
-    const canal = await this.prisma.canal.findUnique({
-      where: { id: dto.canalId },
-      include: { espace: true },
-    });
-    if (!canal) throw new NotFoundException('Canal introuvable');
+    const [messages, total] = await Promise.all([
+      this.prisma.message.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: pg.skip,
+        take: pg.limit,
+        include: { auteur: AUTEUR },
+      }),
+      this.prisma.message.count({ where }),
+    ]);
 
-    // Vérifier que l'utilisateur peut poster (membre ou canal public)
-    if (!canal.estPublic) {
-      const member = await this.prisma.canalMembre.findUnique({
-        where: {
-          canalId_utilisateurId: {
-            canalId: dto.canalId,
-            utilisateurId: userId,
-          },
-        },
-      });
-      if (!member) {
-        throw new ForbiddenException('Canal privé - accès réservé');
-      }
-    }
+    return {
+      data: messages.map((m) => this.mask(m, user)),
+      meta: { total, page: pg.page, limit: pg.limit, totalPages: Math.ceil(total / pg.limit) },
+    };
+  }
 
-    // Vérifier le parent si réponse
+  // ---------- Creation / modification ----------
+
+  async createMessage(user: Actor, dto: CreateMessageDto) {
+    await this.canalAccess.assertCanAccess(user, dto.canalId);
+
+    let parentAuteurId: string | null = null;
     if (dto.parentId) {
-      const parent = await this.prisma.message.findUnique({
-        where: { id: dto.parentId },
-      });
-      if (!parent) throw new NotFoundException('Message parent introuvable');
+      const parent = await this.prisma.message.findUnique({ where: { id: dto.parentId } });
+      if (!parent || parent.deletedAt) throw new NotFoundException('Message parent introuvable');
       if (parent.canalId !== dto.canalId) {
-        throw new ForbiddenException('Le message parent n\'est pas dans ce canal');
+        throw new ForbiddenException("Le message parent n'est pas dans ce canal");
       }
+      parentAuteurId = parent.auteurId;
     }
 
-    return this.prisma.message.create({
+    const contenu = this.sanitization.sanitizeHtml(dto.contenu);
+    if (!contenu.trim()) throw new BadRequestException('Message vide');
+
+    const created = await this.prisma.message.create({
       data: {
         canalId: dto.canalId,
-        auteurId: userId,
+        auteurId: user.id,
         parentId: dto.parentId,
         type: dto.type,
-        contenu: dto.contenu,
+        contenu,
         estAnonyme: dto.estAnonyme ?? false,
       },
-      include: {
-        auteur: {
-          select: {
-            id: true,
-            profil: {
-              select: {
-                prenom: true,
-                nom: true,
-                avatarUrl: true,
-              },
-            },
-          },
-        },
-      },
+      include: { auteur: AUTEUR },
     });
+
+    // Prevenir l'auteur du message parent (texte generique: respecte l'anonymat)
+    if (parentAuteurId && parentAuteurId !== user.id) {
+      this.notifications.notifySafe(
+        parentAuteurId,
+        'message',
+        'Nouvelle réponse',
+        "Quelqu'un a répondu à votre message",
+        { messageId: created.id, parentId: dto.parentId as string, canalId: dto.canalId },
+      );
+    }
+
+    return created;
   }
 
-  async updateMessage(userId: string, messageId: string, dto: UpdateMessageDto) {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
-    if (!message) throw new NotFoundException('Message introuvable');
-
-    // Seul l'auteur ou un admin peut modifier
-    if (message.auteurId !== userId) {
-      // Vérifier si admin - on laisse passer pour l'instant, vérifié par guard
+  async updateMessage(user: Actor, messageId: string, dto: UpdateMessageDto) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message || message.deletedAt) throw new NotFoundException('Message introuvable');
+    if (message.auteurId !== user.id) {
       throw new ForbiddenException('Vous ne pouvez modifier que vos propres messages');
     }
 
-    return this.prisma.message.update({
-      where: { id: messageId },
-      data: {
-        ...(dto.contenu && { contenu: dto.contenu }),
-        ...(dto.estMasque !== undefined && { estMasque: dto.estMasque }),
-      },
-    });
+    const data: any = {};
+    if (dto.contenu) {
+      const contenu = this.sanitization.sanitizeHtml(dto.contenu);
+      if (!contenu.trim()) throw new BadRequestException('Message vide');
+      data.contenu = contenu;
+    }
+    return this.prisma.message.update({ where: { id: messageId }, data });
   }
 
-  async deleteMessage(userId: string, messageId: string) {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
-    if (!message) throw new NotFoundException('Message introuvable');
+  async deleteMessage(user: Actor, messageId: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message || message.deletedAt) throw new NotFoundException('Message introuvable');
 
-    if (message.auteurId !== userId) {
+    const isModerator = await this.canalAccess.canModerate(user, message.canalId);
+    if (message.auteurId !== user.id && !isModerator) {
       throw new ForbiddenException('Vous ne pouvez supprimer que vos propres messages');
     }
 
-    // Soft delete
     return this.prisma.message.update({
       where: { id: messageId },
       data: { deletedAt: new Date() },
     });
   }
 
-  // ─────────────────────────────────────────
-  // VOTES (RG-06 : réputation)
-  // ─────────────────────────────────────────
+  // ---------- Votes (RG-06): un vote par utilisateur et par message ----------
 
-  async voteMessage(userId: string, messageId: string, vote: 'up' | 'down') {
-    // Use transaction to ensure atomicity
+  async voteMessage(user: Actor, messageId: string, vote: 'up' | 'down') {
+    const target = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!target || target.deletedAt) throw new NotFoundException('Message introuvable');
+    await this.canalAccess.assertCanAccess(user, target.canalId);
+    if (target.auteurId === user.id) {
+      throw new ForbiddenException('Vous ne pouvez pas voter pour vos propres messages');
+    }
+
+    const valeur = vote === 'up' ? 1 : -1;
+
     return this.prisma.$transaction(async (tx) => {
-      const message = await tx.message.findUnique({
-        where: { id: messageId },
+      const existing = await tx.voteMessage.findUnique({
+        where: { messageId_utilisateurId: { messageId, utilisateurId: user.id } },
       });
-      if (!message) throw new NotFoundException('Message introuvable');
 
-      // Pas de vote sur ses propres messages
-      if (message.auteurId === userId) {
-        throw new ForbiddenException('Vous ne pouvez pas voter pour vos propres messages');
+      // delta = variation du nombre de votes positifs (et de la reputation de l'auteur)
+      let delta = 0;
+      let monVote: 'up' | 'down' | null = vote;
+
+      if (!existing) {
+        await tx.voteMessage.create({ data: { messageId, utilisateurId: user.id, valeur } });
+        delta = valeur === 1 ? 1 : 0;
+      } else if (existing.valeur === valeur) {
+        // Meme vote renvoye: on l'annule
+        await tx.voteMessage.delete({ where: { id: existing.id } });
+        delta = valeur === 1 ? -1 : 0;
+        monVote = null;
+      } else {
+        await tx.voteMessage.update({ where: { id: existing.id }, data: { valeur } });
+        delta = valeur === 1 ? 1 : -1;
       }
 
-      if (vote === 'up') {
-        // Incrémenter le score de réputation de l'auteur
-        await tx.profil.update({
-          where: { utilisateurId: message.auteurId },
-          data: { scoreReputation: { increment: 1 } },
-        });
-
-        return tx.message.update({
-          where: { id: messageId },
-          data: { votesPositifs: { increment: 1 } },
+      if (delta !== 0) {
+        await tx.profil.updateMany({
+          where: { utilisateurId: target.auteurId },
+          data: { scoreReputation: { increment: delta } },
         });
       }
 
-      // Downvote - on ne diminue pas la réputation pour l'instant
-      return tx.message.update({
-        where: { id: messageId },
-        data: { votesPositifs: { decrement: 1 } },
-      });
+      const message =
+        delta !== 0
+          ? await tx.message.update({
+              where: { id: messageId },
+              data: { votesPositifs: { increment: delta } },
+            })
+          : target;
+
+      return { ...message, monVote };
     });
   }
 
-  // ─────────────────────────────────────────
-  // ÉPINER (admin/delegate)
-  // ─────────────────────────────────────────
+  // ---------- Epingler (admin/delegate) ----------
 
-  async toggleEpingle(messageId: string) {
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
-    });
-    if (!message) throw new NotFoundException('Message introuvable');
+  async toggleEpingle(user: Actor, messageId: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message || message.deletedAt) throw new NotFoundException('Message introuvable');
+    await this.canalAccess.assertCanModerate(user, message.canalId);
 
     return this.prisma.message.update({
       where: { id: messageId },
       data: { estEpingle: !message.estEpingle },
     });
-  }
-
-  // ─────────────────────────────────────────
-  // RECHERCHE
-  // ─────────────────────────────────────────
-
-  async searchMessages(canalId: string, query: string, page: number = 1, limit: number = 20) {
-    const skip = (page - 1) * limit;
-
-    const [messages, total] = await Promise.all([
-      this.prisma.message.findMany({
-        where: {
-          canalId,
-          estMasque: false,
-          contenu: { contains: query, mode: 'insensitive' },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        include: {
-          auteur: {
-            select: {
-              id: true,
-              profil: {
-                select: {
-                  prenom: true,
-                  nom: true,
-                  avatarUrl: true,
-                },
-              },
-            },
-          },
-        },
-      }),
-      this.prisma.message.count({
-        where: {
-          canalId,
-          estMasque: false,
-          contenu: { contains: query, mode: 'insensitive' },
-        },
-      }),
-    ]);
-
-    return {
-      data: messages,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 }

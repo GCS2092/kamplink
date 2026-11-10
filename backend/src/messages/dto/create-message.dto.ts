@@ -1,10 +1,12 @@
-import { IsString, IsOptional, IsUUID, IsBoolean, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsBoolean, IsIn, IsNotEmpty, MaxLength } from 'class-validator';
 
 export class CreateMessageDto {
   @IsUUID()
   canalId!: string;
 
   @IsString()
+  @IsNotEmpty()
+  @MaxLength(5000)
   contenu!: string;
 
   @IsIn(['annonce', 'question', 'ressource', 'discussion'])

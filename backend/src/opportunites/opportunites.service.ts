@@ -4,12 +4,16 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateOpportuniteDto } from './dto/create-opportunite.dto';
 import { UpdateOpportuniteDto } from './dto/update-opportunite.dto';
 
 @Injectable()
 export class OpportunitesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   // ─────────────────────────────────────────
   // LECTURE PUBLIQUE
@@ -25,10 +29,13 @@ export class OpportunitesService {
       estExpiree?: boolean;
     },
   ) {
+    page = Math.max(1, page || 1);
+    limit = Math.min(Math.max(1, limit || 20), 100);
     const skip = (page - 1) * limit;
 
     const where: any = {
       estActive: true,
+      estMasque: false,
       deletedAt: null,
     };
 
@@ -104,6 +111,8 @@ export class OpportunitesService {
       throw new NotFoundException('Opportunité introuvable');
     }
 
+    if (opportunite.estMasque) throw new NotFoundException('Opportunité introuvable');
+
     // Incrémenter les vues
     await this.prisma.opportunite.update({
       where: { id: opportuniteId },
@@ -114,10 +123,13 @@ export class OpportunitesService {
   }
 
   async searchOpportunites(query: string, page: number = 1, limit: number = 20) {
+    page = Math.max(1, page || 1);
+    limit = Math.min(Math.max(1, limit || 20), 100);
     const skip = (page - 1) * limit;
 
     const where: any = {
       estActive: true,
+      estMasque: false,
       deletedAt: null,
       OR: [
         { titre: { contains: query, mode: 'insensitive' } },
@@ -166,6 +178,8 @@ export class OpportunitesService {
   // ─────────────────────────────────────────
 
   async getMyOpportunites(userId: string, page: number = 1, limit: number = 20) {
+    page = Math.max(1, page || 1);
+    limit = Math.min(Math.max(1, limit || 20), 100);
     const skip = (page - 1) * limit;
 
     const [opportunites, total] = await Promise.all([
@@ -334,10 +348,18 @@ export class OpportunitesService {
     });
     if (!opportunite) throw new NotFoundException('Opportunité introuvable');
 
-    return this.prisma.opportunite.update({
+    const updated = await this.prisma.opportunite.update({
       where: { id: opportuniteId },
-      data: { estActive: true },
+      data: { estMasque: false },
     });
+    this.notifications.notifySafe(
+      opportunite.auteurId,
+      'opportunite',
+      'Opportunité approuvée',
+      `Votre opportunité « ${opportunite.titre} » est visible.`,
+      { opportuniteId },
+    );
+    return updated;
   }
 
   async rejectOpportunite(opportuniteId: string) {
@@ -346,10 +368,18 @@ export class OpportunitesService {
     });
     if (!opportunite) throw new NotFoundException('Opportunité introuvable');
 
-    return this.prisma.opportunite.update({
+    const updated = await this.prisma.opportunite.update({
       where: { id: opportuniteId },
-      data: { estActive: false },
+      data: { estMasque: true },
     });
+    this.notifications.notifySafe(
+      opportunite.auteurId,
+      'moderation',
+      'Opportunité rejetée',
+      `Votre opportunité « ${opportunite.titre} » a été rejetée par la modération.`,
+      { opportuniteId },
+    );
+    return updated;
   }
 
   async markAsExpired(opportuniteId: string) {

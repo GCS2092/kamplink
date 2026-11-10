@@ -22,6 +22,12 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  // Derriere un reverse proxy (Render, Railway, Nginx...), definir TRUST_PROXY=1 dans .env
+  // pour que req.ip soit la vraie IP du client (sinon toutes les requetes partagent l'IP du proxy)
+  if (process.env.TRUST_PROXY) {
+    app.getHttpAdapter().getInstance().set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+  }
+
   // ─────────────────────────────────────────
   // SÉCURITÉ
   // ─────────────────────────────────────────
@@ -32,7 +38,7 @@ async function bootstrap() {
 
   // CORS configuré pour le frontend
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
     credentials: true,
   });
 

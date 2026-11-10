@@ -1,0 +1,37 @@
+Set-Location "D:\Kamplink\kamplink\backend"
+
+function Get-Lot($patterns) {
+  $files = foreach ($p in $patterns) { Get-ChildItem -Path $p -Recurse -File -ErrorAction SilentlyContinue }
+  $files = $files | Where-Object { $_.Extension -in ".ts",".prisma" -and $_.Name -notmatch "\.spec\.ts$" } | Sort-Object FullName -Unique
+  ($files | ForEach-Object {
+    "`n===== " + $_.FullName.Replace((Get-Location).Path + "\", "") + " =====`n" + (Get-Content $_.FullName -Raw)
+  }) -join "`n"
+}
+
+$lots = @(
+  @{ n = "1/5 Coeur (schema, main, app.module)"; p = @("prisma\schema.prisma","src\main.ts","src\app.module.ts","src\prisma") },
+  @{ n = "2/5 Auth, securite, common, firebase"; p = @("src\auth","src\security","src\common","src\firebase") },
+  @{ n = "3/5 Users, espaces, canaux"; p = @("src\users","src\espaces","src\canaux") },
+  @{ n = "4/5 Messages, chat, documents"; p = @("src\messages","src\chat","src\documents") },
+  @{ n = "5/5 Opportunites, signalements, notifications, queue, redis, search, health"; p = @("src\opportunites","src\signalements","src\notifications","src\queue","src\redis","src\search","src\health") }
+)
+
+$i = 0
+foreach ($lot in $lots) {
+  $i++
+  $txt = Get-Lot $lot.p
+  $txt | Set-Clipboard
+  Write-Host "LOT $($lot.n) copie ($([math]::Round($txt.Length/1KB)) Ko). Colle-le dans le chat." -ForegroundColor Green
+  if ($i -lt $lots.Count) { Read-Host "Appuie sur Entree quand c'est colle pour copier le lot suivant" | Out-Null }
+}
+Write-Host "Termine." -ForegroundColor Cyan
+
+
+
+Set-Location "D:\Kamplink\kamplink\backend"
+$files = @("explication\DOCUMENTATION_COMPLETE.md","A faire","prisma\prisma\seed.ts")
+$out = foreach ($f in $files) {
+  if (Test-Path $f) { "`n===== $f =====`n" + (Get-Content $f -Raw -Encoding UTF8) }
+}
+$out | Out-String | Set-Clipboard
+Write-Host "Copié ($((($out | Out-String).Length)) caractères)" -ForegroundColor Green
