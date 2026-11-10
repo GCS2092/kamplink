@@ -134,6 +134,8 @@ En production sans configuration Firebase valide, l'application refuse de demarr
 
 ## 11. Autres documents
 
-`SUIVI.md` (historique et reste a faire), `ETAPES.md` (mise en route et feuille de route), `API_README.md`, `REDIS_ARCHITECTURE.md`,
-`UPSTASH_INTEGRATION_GUIDE.md`, `SECURITY_IMPLEMENTATION.md`, `VALIDATION.md`, `AMELIORATIONS_IMPLEMENTEES.md`, `ANALYSE_BACKEND.md`.
-**Attention**: ces six derniers datent d'avant les lots 1 a 4c; ils decrivent notamment un reset de mot de passe, Bull et Elasticsearch qui n'existent plus ou ne servent pas. Ils sont a realigner ou archiver.
+- README.md (racine): presentation et mise en route
+- PRESENTATION.md: le projet, son but et ses fonctionnalites
+- SUIVI.md: historique des lots et reste a faire
+- ETAPES.md: mise en route, parcours de test, etapes restantes
+- archives/: anciens documents obsoletes (voir archives/LISEZ-MOI.md)

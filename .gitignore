@@ -70,3 +70,5 @@ backend/storage/
 backend/.env
 backend/.env.*
 !backend/.env.example
+
+backend/.git_lots/
