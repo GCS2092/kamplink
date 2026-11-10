@@ -1,0 +1,259 @@
+==============================================================
+KAMPLINK - RÉSUMÉ DU PROJET
+(nom de code interne : CampusLink)
+==============================================================
+
+
+1. EN UNE PHRASE
+--------------------------------------------------------------
+Kamplink est un réseau social pour étudiants où seuls les vrais
+étudiants peuvent entrer : un endroit unique pour discuter par
+filière, partager des cours et trouver des stages et des emplois.
+
+
+2. LE PROBLÈME
+--------------------------------------------------------------
+Aujourd'hui, les étudiants s'organisent sur des groupes WhatsApp
+et Facebook, avec plusieurs défauts :
+- Les cours, examens et résumés se perdent dans des fils de
+  discussion sans fin.
+- Les offres de stage, d'emploi et de bourse circulent au hasard,
+  souvent trop tard.
+- N'importe qui peut rejoindre un groupe : aucun moyen de savoir
+  si l'interlocuteur est étudiant.
+- La modération dépend de la bonne volonté de quelques personnes,
+  sans outils.
+- Rien n'est organisé par université, filière et niveau.
+
+
+3. L'OBJECTIF
+--------------------------------------------------------------
+Donner à chaque étudiant un espace organisé selon son parcours
+(université, filière, niveau), de confiance, où il trouve les
+ressources et les opportunités utiles à sa réussite et à son
+insertion professionnelle.
+
+
+4. LE PRINCIPE CENTRAL : LA CARTE ÉTUDIANTE
+--------------------------------------------------------------
+La carte étudiante authentifie l'étudiant. Un numéro de carte =
+un compte.
+ 1. L'étudiant se connecte par code SMS (OTP), puis crée son profil.
+ 2. Il envoie la photo de sa carte (stockage privé) et son numéro.
+ 3. Un administrateur vérifie, aidé si possible par la liste
+    officielle de l'université.
+ 4. Après la décision, la photo est supprimée ; seul le numéro
+    reste, pour empêcher qu'une carte serve à plusieurs comptes.
+
+C'est ce qui distingue Kamplink d'un groupe de discussion ouvert :
+la communauté est fermée et vérifiée.
+
+
+5. POUR QUI
+--------------------------------------------------------------
+- Étudiant : discussions par filière, cours et examens classés,
+  offres de stage et d'emploi, candidature directe.
+- Délégué : outils pour animer et modérer les canaux de sa classe
+  ou de sa filière.
+- Entreprise : publication d'offres auprès d'étudiants vérifiés,
+  réception de candidatures (après validation de l'entreprise).
+- Administration : vérification des étudiants et des entreprises,
+  traitement des signalements, suivi via un journal d'audit.
+
+
+6. FONCTIONNALITÉS
+--------------------------------------------------------------
+COMMUNAUTÉ
+- Espaces par université, filière et niveau
+- Canaux publics ou privés
+- Messages avec réponses en fil, messages anonymes, réactions
+  emoji, épinglage, recherche
+- Chat en temps réel
+- Votes sur les messages et score de réputation
+
+RESSOURCES
+- Partage de documents : cours, examens, résumés, exercices
+- Catégories et sous-catégories
+- Accès public ou restreint à certains niveaux ou filières
+  (un sujet de L2 reste réservé aux L2)
+- Favoris
+
+EMPLOI ET OPPORTUNITÉS
+- Stages, emplois, bourses, concours, événements
+- Date limite et filtres
+- Candidatures avec CV et lettre de motivation
+- Suivi du statut : envoyée, vue, acceptée, refusée
+- Entreprises validées par un administrateur ; leurs offres leur
+  sont rattachées automatiquement
+
+CONFIANCE ET MODÉRATION
+- Vérification des étudiants par carte, une carte par compte
+- Signalements de messages, documents et opportunités
+- Rôles : étudiant, délégué, entreprise, content admin, admin,
+  superadmin, avec une hiérarchie respectée
+- Un délégué ne modère que les canaux dont il a la charge
+- Journal d'audit des actions sensibles
+- Notifications dans l'application et push sur mobile
+
+
+7. PÉRIMÈTRE (SCOPE)
+--------------------------------------------------------------
+INCLUS DANS CE DÉPÔT
+- Le backend (API) uniquement.
+
+HORS PÉRIMÈTRE POUR L'INSTANT
+- Application mobile
+- Site web
+- Paiement et modèle économique détaillé
+- Application dédiée aux entreprises
+
+DÉCISION EN ATTENTE
+- Mode de connexion des entreprises : code SMS comme les
+  étudiants, ou email et mot de passe.
+
+
+8. SOCLE TECHNIQUE
+--------------------------------------------------------------
+- Framework : NestJS et TypeScript (un module par domaine)
+- Base de données : PostgreSQL avec Prisma (migrations versionnées)
+- Authentification et push : Firebase
+- Temps réel : Socket.IO
+- Files d'attente : Bull
+- Cache et limitation de débit : Redis (Upstash), optionnel
+- Monitoring : Sentry (optionnel), Pino, health checks
+- Documentation de l'API : Swagger
+- Sécurité : Helmet, validation des entrées, sanitisation, blocage
+  d'IP, limitation des tentatives de connexion
+
+
+9. ÉTAT ACTUEL (SANS ENJOLIVEMENT)
+--------------------------------------------------------------
+- Le code des fonctionnalités ci-dessus est écrit et compile.
+- Il n'a JAMAIS été exécuté de bout en bout : les clés Firebase
+  ne sont pas encore renseignées, donc aucun parcours réel
+  (connexion, carte, message, document) n'est validé.
+- Pas encore de tests automatisés significatifs.
+- Les documents de cours sont de simples liens : seul le
+  téléversement des cartes existe.
+- Le stockage des photos est local ; il faudra un stockage
+  persistant en hébergement.
+- Les emails (reset de mot de passe, notifications) ne sont pas
+  encore branchés.
+- L'export de données n'est pas implémenté.
+
+
+10. RISQUES ET LIMITES IDENTIFIÉS
+--------------------------------------------------------------
+1. Effet de réseau : une plateforme sociale n'a de valeur que si
+   les gens y sont déjà. Convaincre une première communauté est
+   plus dur que coder.
+2. Concurrence de WhatsApp : gratuit, installé, familier.
+   Kamplink doit offrir quelque chose de clairement meilleur.
+3. Vérification manuelle : ne passe pas à l'échelle sur des
+   dizaines de milliers d'étudiants.
+4. Modération : une communauté génère des signalements et des
+   conflits ; elle demande du temps et des relais fiables.
+5. Données sensibles : les photos de cartes exigent une grande
+   rigueur de sécurité et de conformité.
+6. Modèle économique encore flou.
+
+
+11. AMÉLIORATIONS ET SOLUTIONS PRÉVUES
+--------------------------------------------------------------
+VÉRIFICATION
+- Importer la liste officielle des étudiants fournie par chaque
+  université pour automatiser la majorité des vérifications.
+- Réserver l'administrateur aux cas litigieux.
+- Recruter des délégués comme vérificateurs.
+
+MODÉRATION
+- Confier la modération aux délégués de chaque filière, avec des
+  règles simples et un système de signalement clair.
+
+DONNÉES SENSIBLES
+- Photo supprimée après décision, stockage privé, accès admin
+  tracé dans le journal d'audit.
+- Configurer correctement le stockage persistant en production.
+
+MODÈLE ÉCONOMIQUE
+- D'abord prouver l'usage par les étudiants.
+- Ensuite, faire payer les entreprises pour publier des offres
+  ou accéder à un public qualifié.
+
+QUALITÉ TECHNIQUE
+- Exécuter le code de bout en bout et corriger ce qui casse.
+- Ajouter des tests automatisés sur les parcours critiques.
+- Brancher le service d'emails.
+- Remplacer le README par défaut de NestJS par un vrai README.
+- Nettoyer les doublons : deux librairies de hash (bcrypt et
+  bcryptjs), deux plateformes HTTP (Express et Fastify), deux
+  fichiers README (README.md et readme.md).
+- Renommer le modèle Prisma "ActionModeration_".
+- Prévoir les endpoints pour la table "articles_marche" (fonction
+  prévue mais non exposée).
+
+
+12. STRATÉGIE DE LANCEMENT RECOMMANDÉE
+--------------------------------------------------------------
+Pour contourner l'effet de réseau et la concurrence de WhatsApp :
+ 1. Commencer par UNE seule filière, pour y viser une adoption
+    quasi totale plutôt que 5 % de toute l'université.
+ 2. Offrir une raison unique de venir, que WhatsApp ne donne pas :
+    une bibliothèque d'examens classés par matière, ou des offres
+    de stage vérifiées.
+ 3. Passer par les délégués, qui entraînent leur classe.
+ 4. Compléter WhatsApp plutôt que le remplacer (par exemple, des
+    liens de partage vers les ressources).
+ 5. Tester avec 20 à 30 étudiants d'une même filière pendant un
+    mois, observer ce qu'ils utilisent vraiment, puis ajuster.
+ 6. Élargir ensuite à d'autres filières, puis d'autres
+    universités, avec les mêmes mécanismes.
+
+
+13. PLAN D'ACTION PAR ÉTAPES
+--------------------------------------------------------------
+ÉTAPE 1 - Faire tourner
+- Renseigner les clés Firebase.
+- Exécuter les parcours : connexion, profil, carte, message,
+  document, opportunité.
+
+ÉTAPE 2 - Fiabiliser
+- Tests automatisés sur les parcours critiques.
+- Stockage persistant des photos.
+- Emails branchés.
+- Nettoyage du code.
+
+ÉTAPE 3 - Interface
+- Créer l'application mobile (premier écran des étudiants) et/ou
+  un site.
+
+ÉTAPE 4 - Pilote
+- Lancer avec une filière, 20 à 30 étudiants, un mois.
+- Mesurer : inscriptions, messages, documents consultés,
+  candidatures.
+
+ÉTAPE 5 - Croissance
+- Ouvrir à d'autres filières et universités.
+- Onboarder les premières entreprises.
+- Tester le modèle économique.
+
+
+14. POURQUOI C'EST UN BON PROJET
+--------------------------------------------------------------
+- Il répond à un besoin réel et vécu par tous les étudiants.
+- Il s'appuie sur un atout difficile à copier : la vérification
+  par la carte étudiante, qui crée une communauté fermée et fiable.
+- Il a un modèle à deux faces : les étudiants apportent
+  l'audience, les entreprises apportent les opportunités.
+- Il est pensé pour le contexte réel : connexion par téléphone,
+  structure par université, filière et niveau, adaptable à
+  d'autres pays.
+- Il protège les données sensibles dès la conception.
+- Son socle technique est modulaire et évolutif.
+
+En résumé : un "WhatsApp + bibliothèque de cours + site d'offres
+de stage", réservé aux étudiants vérifiés d'une même communauté.
+Le succès dépendra moins de la technique que de la qualité du
+lancement et de l'adoption par une première communauté.
+
+==============================================================

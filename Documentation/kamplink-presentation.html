@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamplink – Présentation du projet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EEF2; --ink:#0B2239; --muted:#4D6379; --line:#C3D0DB; --card:#FFFFFF;
+  --navy:#0B2239; --yellow:#FFC531; --green:#18A47F; --red:#D2452F;
+  --display:'Bricolage Grotesque','Trebuchet MS',sans-serif;
+  --body:'Instrument Sans','Segoe UI',Arial,sans-serif;
+}
+body.dark{--paper:#0B2239;--ink:#EEF3F7;--muted:#9FB3C5;--line:#2B4560;--card:#12304D}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:clamp(15px,1.45vw,20px);line-height:1.5;transition:background .4s,color .4s}
+.slide{position:absolute;inset:0;padding:7vh 7vw 12vh;display:none;flex-direction:column;justify-content:center;overflow-y:auto}
+.slide.active{display:flex}
+h1,h2,h3{font-family:var(--display);line-height:1.04;letter-spacing:-.025em}
+h2{font-size:clamp(2rem,4.6vw,3.7rem);font-weight:800;margin-bottom:.7em;max-width:18ch}
+h3{font-size:1.2rem;font-weight:700;margin-bottom:.35em}
+p{max-width:60ch}
+.muted{color:var(--muted)}
+.lead{font-size:1.2em;margin-bottom:1.4rem}
+.grid{display:grid;gap:1.1rem;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:1.2rem 1.3rem}
+.box.tab{border-top:6px solid var(--yellow)}
+.box.tab.g{border-top-color:var(--green)}.box.tab.r{border-top-color:var(--red)}
+ul.clean{list-style:none;display:grid;gap:.65rem}
+ul.clean li{padding-left:1.3rem;position:relative;max-width:62ch}
+ul.clean li::before{content:"";position:absolute;left:0;top:.62em;width:.55rem;height:.55rem;background:var(--yellow);border-radius:2px}
+ul.clean.ko li::before{background:var(--red)}
+ul.clean.ok li::before{background:var(--green)}
+.chip{display:inline-block;font-size:.82rem;font-weight:600;padding:.15rem .7rem;border-radius:99px;background:var(--yellow);color:var(--navy)}
+.chip.g{background:var(--green);color:#fff}.chip.r{background:var(--red);color:#fff}
+
+/* ── Couverture : la carte au bout du cordon ── */
+.cover{position:relative;display:grid;grid-template-columns:1.3fr 1fr;gap:4vw;align-items:center;height:100%}
+.cover h1{font-size:clamp(3.4rem,11vw,9rem);font-weight:800;letter-spacing:-.045em;line-height:.9}
+.cover p{margin-top:1.4rem;font-size:1.25em;max-width:34ch}
+.cover small{display:block;margin-top:1rem;color:var(--muted)}
+.hang{position:relative;justify-self:center;width:min(320px,100%);align-self:start;margin-top:-7vh;transform-origin:50% 0}
+.strap{width:26px;height:22vh;margin:0 auto;background:var(--yellow);background-image:repeating-linear-gradient(135deg,transparent 0 6px,rgba(11,34,57,.18) 6px 8px)}
+.clip{width:44px;height:16px;margin:0 auto;border-radius:4px;background:#8FA5B8}
+.idcard{background:#fff;color:#0B2239;border-radius:16px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.6)}
+.idcard .band{background:var(--yellow);padding:.7rem 1.1rem;font-family:var(--display);font-weight:800;display:flex;justify-content:space-between}
+.idcard .body{display:flex;gap:1rem;padding:1.2rem 1.1rem}
+.photo{width:78px;height:98px;border-radius:8px;background:#D5DFE8;position:relative;flex:none;overflow:hidden}
+.photo::before{content:"";position:absolute;left:50%;top:20%;width:34px;height:34px;margin-left:-17px;border-radius:50%;background:#8DA2B4}
+.photo::after{content:"";position:absolute;left:50%;bottom:-6px;width:62px;height:42px;margin-left:-31px;border-radius:30px 30px 0 0;background:#8DA2B4}
+.lines span{display:block;height:9px;border-radius:5px;background:#D5DFE8;margin-bottom:.6rem}
+.lines span:nth-child(1){width:92%}.lines span:nth-child(2){width:64%}.lines span:nth-child(3){width:78%}
+.holo{height:9px;background:linear-gradient(90deg,#18A47F,#FFC531,#6EA8FF,#18A47F);background-size:200% 100%}
+.verified{display:flex;align-items:center;gap:.5rem;font-weight:600;color:#0F7A5C;padding:.9rem 1.1rem}
+.verified i{width:1.4rem;height:1.4rem;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-style:normal;font-size:.8rem}
+
+/* ── Problème : chat vs bibliothèque ── */
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:1.4rem}
+.pane{border-radius:14px;padding:1.1rem;border:1px solid var(--line);background:var(--card)}
+.pane>b{display:block;margin-bottom:.8rem;font-family:var(--display)}
+.msg{background:#E5E9ED;color:#222;border-radius:12px 12px 12px 3px;padding:.5rem .8rem;margin-bottom:.5rem;font-size:.9em;width:fit-content;max-width:92%}
+.msg:nth-child(odd){margin-left:1.2rem}
+.msg.old{opacity:.5}
+.row{display:flex;align-items:center;gap:.6rem;padding:.55rem .7rem;border-radius:8px;background:var(--paper);margin-bottom:.45rem;font-size:.92em}
+.row i{font-style:normal;color:var(--green);font-weight:800}
+.row s{margin-left:auto;font-size:.8em;color:var(--muted);text-decoration:none}
+
+/* ── Flux de vérification ── */
+.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;position:relative;margin-top:.5rem}
+.flow::before{content:"";position:absolute;left:8%;right:8%;top:1.1rem;height:4px;background:var(--yellow);border-radius:2px}
+.node{position:relative;text-align:center}
+.node .dot{position:relative;z-index:1;width:2.3rem;height:2.3rem;margin:0 auto .8rem;border-radius:50%;background:var(--navy);color:var(--yellow);display:grid;place-items:center;font-family:var(--display);font-weight:800;border:4px solid var(--paper)}
+.node p{margin:0 auto;font-size:.92em}
+.node h3{margin-bottom:.2rem}
+.callout{margin-top:2rem;padding:1rem 1.3rem;border-left:6px solid var(--green);background:var(--card);border-radius:0 12px 12px 0;max-width:62ch}
+
+/* ── Frise du plan ── */
+.timeline{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;position:relative}
+.timeline::before{content:"";position:absolute;left:0;right:0;top:.55rem;height:4px;background:var(--yellow)}
+.tl{position:relative;padding-top:2rem}
+.tl::before{content:"";position:absolute;left:0;top:0;width:1.2rem;height:1.2rem;border-radius:50%;background:var(--navy);border:4px solid var(--yellow)}
+.tl h3{font-size:1.05rem}.tl p{font-size:.88em;color:var(--muted)}
+
+/* ── Risques ── */
+.risk{display:grid;grid-template-columns:.8fr 1.4fr;border-top:1px solid var(--line);padding:.6rem 0;gap:1.5rem}
+.risk:last-child{border-bottom:1px solid var(--line)}
+.risk b{font-family:var(--display)}.risk span{color:var(--muted)}.risk span em{font-style:normal;color:var(--ink);font-weight:600}
+
+/* ── Navigation ── */
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;align-items:center;gap:1rem;padding:1.5vh 7vw;background:var(--paper);border-top:1px solid var(--line);transition:background .4s}
+.dots{flex:1;display:flex;gap:.45rem;justify-content:center}
+.dots button{width:.65rem;height:.65rem;padding:0;border-radius:50%;border:0;background:var(--line);cursor:pointer}
+.dots button.on{background:var(--yellow);transform:scale(1.4)}
+.nav>button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:.4rem 1.1rem;border-radius:8px;cursor:pointer}
+.nav>button:hover:not(:disabled){border-color:var(--yellow)}
+.nav>button:disabled{opacity:.35;cursor:default}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+@media (max-width:820px){
+  .cover{grid-template-columns:1fr}.hang{display:none}
+  .vs,.risk{grid-template-columns:1fr}
+  .flow,.timeline{grid-template-columns:1fr;gap:1.2rem}
+  .flow::before,.timeline::before{display:none}
+  .node{text-align:left}.node .dot{margin:0 0 .5rem}
+  .slide{justify-content:flex-start;padding-top:5vh}
+  .dots{display:none}.nav{justify-content:space-between}
+}
+@media (prefers-reduced-motion:no-preference){
+  /* un seul moment orchestré : la carte se balance à l'ouverture */
+  .slide.active .hang{animation:swing 2.4s cubic-bezier(.3,.6,.4,1) both}
+  @keyframes swing{0%{transform:rotate(9deg)}30%{transform:rotate(-5deg)}55%{transform:rotate(3deg)}80%{transform:rotate(-1deg)}100%{transform:none}}
+  .holo{animation:sh 5s linear infinite}@keyframes sh{to{background-position:200% 0}}
+}
+</style>
+</head>
+<body class="dark">
+<main id="deck">
+
+<!-- 1. Couverture -->
+<section class="slide active dark" aria-label="Titre">
+  <div class="cover">
+    <div>
+      <h1>Kamplink</h1>
+      <p>Le réseau social où seuls les vrais étudiants entrent. Filières, cours, stages et emplois, au même endroit.</p>
+      <small>Nom de code interne : CampusLink</small>
+    </div>
+    <div class="hang" aria-hidden="true">
+      <div class="strap"></div><div class="clip"></div>
+      <div class="idcard">
+        <div class="band"><span>CARTE ÉTUDIANTE</span><span>2026</span></div>
+        <div class="body"><div class="photo"></div><div class="lines"><span></span><span></span><span></span></div></div>
+        <div class="holo"></div>
+        <div class="verified"><i>✓</i> Étudiant vérifié</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Problème -->
+<section class="slide light" aria-label="Le problème">
+  <h2>Aujourd’hui, tout se perd dans le groupe</h2>
+  <div class="vs">
+    <div class="pane">
+      <b>Groupe WhatsApp</b>
+      <div class="msg old">Quelqu’un a l’examen de L2 de l’an dernier ?</div>
+      <div class="msg old">Il est passé il y a 3 semaines, remonte le fil…</div>
+      <div class="msg">Stage dispo chez une boîte, date limite hier</div>
+      <div class="msg">C’est qui Karim ? Il est vraiment étudiant ?</div>
+    </div>
+    <div class="pane">
+      <b>Kamplink</b>
+      <div class="row"><i>✓</i> Informatique › L2 › Examens <s>2025</s></div>
+      <div class="row"><i>✓</i> Stage · date limite visible <s>5 jours</s></div>
+      <div class="row"><i>✓</i> Auteur : étudiant vérifié <s>carte</s></div>
+      <div class="row"><i>✓</i> Signalement en un geste <s>délégué</s></div>
+    </div>
+  </div>
+  <p class="muted" style="margin-top:1.3rem">Aucune vérification, aucune organisation par université, filière et niveau, et une modération sans outils.</p>
+</section>
+
+<!-- 3. Carte -->
+<section class="slide light" aria-label="La carte étudiante">
+  <h2>La carte étudiante ouvre la porte</h2>
+  <p class="lead">Un numéro de carte, un compte. La communauté est fermée et vérifiée.</p>
+  <div class="flow">
+    <div class="node"><div class="dot">1</div><h3>Connexion</h3><p class="muted">Code SMS, puis création du profil.</p></div>
+    <div class="node"><div class="dot">2</div><h3>Carte</h3><p class="muted">Photo en stockage privé et numéro.</p></div>
+    <div class="node"><div class="dot">3</div><h3>Contrôle</h3><p class="muted">Un administrateur vérifie, aidé de la liste officielle.</p></div>
+    <div class="node"><div class="dot">4</div><h3>Décision</h3><p class="muted">Photo supprimée. Le numéro reste, pour éviter les doublons.</p></div>
+  </div>
+  <div class="callout"><b>Pourquoi c’est fort :</b> c’est ce qui distingue Kamplink d’un groupe ouvert, et c’est difficile à copier.</div>
+</section>
+
+<!-- 4. Profils -->
+<section class="slide light" aria-label="Pour qui">
+  <h2>Quatre profils, un espace</h2>
+  <div class="grid">
+    <div class="box tab"><h3>Étudiant</h3><p class="muted">Discussions par filière, cours et examens classés, offres, candidature directe.</p></div>
+    <div class="box tab g"><h3>Délégué</h3><p class="muted">Anime et modère les canaux de sa classe ou de sa filière, et seulement ceux-là.</p></div>
+    <div class="box tab"><h3>Entreprise</h3><p class="muted">Publie des offres auprès d’étudiants vérifiés, après validation.</p></div>
+    <div class="box tab r"><h3>Administration</h3><p class="muted">Vérifie, traite les signalements, suit le journal d’audit.</p></div>
+  </div>
+</section>
+
+<!-- 5. Fonctionnalités -->
+<section class="slide light" aria-label="Fonctionnalités">
+  <h2>Ce que Kamplink propose</h2>
+  <div class="grid">
+    <div class="box tab"><h3>Communauté</h3>
+      <ul class="clean"><li>Espaces par université, filière, niveau</li><li>Canaux publics ou privés</li><li>Fils, anonymat, réactions, recherche</li><li>Temps réel, votes, réputation</li></ul></div>
+    <div class="box tab g"><h3>Ressources</h3>
+      <ul class="clean ok"><li>Cours, examens, résumés, exercices</li><li>Catégories et sous-catégories</li><li>Accès par niveau ou filière</li><li>Favoris</li></ul></div>
+    <div class="box tab"><h3>Opportunités</h3>
+      <ul class="clean"><li>Stages, emplois, bourses, concours</li><li>Date limite et filtres</li><li>CV et lettre de motivation</li><li>Suivi : envoyée, vue, acceptée, refusée</li></ul></div>
+    <div class="box tab r"><h3>Confiance</h3>
+      <ul class="clean ko"><li>Une carte par compte</li><li>Signalements, rôles hiérarchisés</li><li>Journal d’audit</li><li>Notifications push</li></ul></div>
+  </div>
+</section>
+
+<!-- 6. État actuel -->
+<section class="slide light" aria-label="État actuel">
+  <h2>Où en est le projet, franchement</h2>
+  <div class="grid">
+    <div class="box"><span class="chip g">Fait</span>
+      <ul class="clean ok" style="margin-top:.8rem"><li>Backend écrit, il compile</li><li>NestJS, TypeScript, PostgreSQL, Prisma</li><li>Firebase, Socket.IO, Bull, Redis, Swagger</li><li>Helmet, validation, limitation de débit</li></ul></div>
+    <div class="box"><span class="chip r">À faire</span>
+      <ul class="clean ko" style="margin-top:.8rem"><li>Jamais exécuté de bout en bout</li><li>Pas de tests automatisés</li><li>Cours : liens seulement</li><li>Photos en local, emails non branchés</li></ul></div>
+    <div class="box"><span class="chip">Hors périmètre</span>
+      <ul class="clean" style="margin-top:.8rem"><li>Application mobile et site web</li><li>Paiement et modèle économique</li><li>Application pour entreprises</li></ul>
+      <p class="muted" style="margin-top:.8rem;font-size:.88em">En attente : connexion des entreprises, SMS ou email.</p></div>
+  </div>
+</section>
+
+<!-- 7. Risques -->
+<section class="slide light" aria-label="Risques">
+  <h2>Les risques et la réponse</h2>
+  <div>
+    <div class="risk"><b>Effet de réseau</b><span>Une plateforme sociale vaut ses membres. <em>Lancer sur une seule filière.</em></span></div>
+    <div class="risk"><b>WhatsApp</b><span>Gratuit, installé. <em>Offrir une raison unique, le compléter.</em></span></div>
+    <div class="risk"><b>Vérification manuelle</b><span>Ne passe pas à l’échelle. <em>Importer les listes officielles.</em></span></div>
+    <div class="risk"><b>Modération</b><span>Demande du temps. <em>Déléguer par filière, règles simples.</em></span></div>
+    <div class="risk"><b>Données sensibles</b><span>Photos de cartes. <em>Stockage privé, suppression, accès tracé.</em></span></div>
+    <div class="risk"><b>Modèle économique</b><span>Encore flou. <em>Prouver l’usage, puis faire payer les entreprises.</em></span></div>
+  </div>
+</section>
+
+<!-- 8. Lancement -->
+<section class="slide dark" aria-label="Lancement">
+  <h2>Lancer petit pour réussir grand</h2>
+  <ul class="clean" style="gap:1rem;font-size:1.1em">
+    <li><b>Une seule filière</b> : viser une adoption quasi totale plutôt que 5 % de l’université.</li>
+    <li>Une raison unique de venir : une bibliothèque d’examens classés, ou des stages vérifiés.</li>
+    <li><b>Les délégués</b> entraînent leur classe.</li>
+    <li>Compléter WhatsApp avec des liens de partage, sans le remplacer.</li>
+    <li>20 à 30 étudiants pendant un mois, puis on ajuste et on élargit.</li>
+  </ul>
+</section>
+
+<!-- 9. Plan -->
+<section class="slide light" aria-label="Plan d’action">
+  <h2>Cinq étapes</h2>
+  <div class="timeline">
+    <div class="tl"><h3>Faire tourner</h3><p>Clés Firebase, parcours complets de bout en bout.</p></div>
+    <div class="tl"><h3>Fiabiliser</h3><p>Tests, stockage persistant, emails, nettoyage.</p></div>
+    <div class="tl"><h3>Interface</h3><p>Application mobile et/ou site web.</p></div>
+    <div class="tl"><h3>Pilote</h3><p>Une filière, un mois. Mesurer inscriptions, messages, candidatures.</p></div>
+    <div class="tl"><h3>Croissance</h3><p>Autres filières, universités, entreprises, modèle économique.</p></div>
+  </div>
+</section>
+
+<!-- 10. Conclusion -->
+<section class="slide dark" aria-label="Conclusion">
+  <h2>Un bon projet, si le lancement suit</h2>
+  <ul class="clean ok" style="margin-bottom:1.6rem">
+    <li>Un besoin réel, vécu par tous les étudiants.</li>
+    <li>Un atout difficile à copier : la carte étudiante.</li>
+    <li>Deux faces : étudiants pour l’audience, entreprises pour les offres.</li>
+    <li>Pensé pour le terrain : connexion par téléphone, structure par filière.</li>
+  </ul>
+  <div class="callout" style="border-left-color:var(--yellow)"><b>En résumé :</b> un « WhatsApp + bibliothèque de cours + site d’offres de stage », réservé aux étudiants vérifiés. Le succès dépendra de l’adoption par une première communauté.</div>
+</section>
+
+</main>
+
+<nav class="nav" aria-label="Navigation">
+  <button id="prev">Précédent</button>
+  <div class="dots" id="dots"></div>
+  <button id="next">Suivant</button>
+</nav>
+
+<script>
+(function(){
+  var slides=[].slice.call(document.querySelectorAll('.slide'));
+  var prev=document.getElementById('prev'), next=document.getElementById('next'), dotsBox=document.getElementById('dots');
+  var dots=slides.map(function(s,k){
+    var b=document.createElement('button');
+    b.setAttribute('aria-label','Aller à la diapositive '+(k+1));
+    b.addEventListener('click',function(){go(k)});
+    dotsBox.appendChild(b); return b;
+  });
+  var i=0;
+  function go(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach(function(s,k){s.classList.toggle('active',k===i)});
+    dots.forEach(function(d,k){d.classList.toggle('on',k===i)});
+    document.body.classList.toggle('dark',slides[i].classList.contains('dark'));
+    slides[i].scrollTop=0;
+    prev.disabled=i===0; next.disabled=i===slides.length-1;
+    try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+  }
+  prev.addEventListener('click',function(){go(i-1)});
+  next.addEventListener('click',function(){go(i+1)});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){e.preventDefault();go(i+1)}
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){e.preventDefault();go(i-1)}
+    else if(e.key==='Home')go(0); else if(e.key==='End')go(slides.length-1);
+  });
+  var x0=null;
+  document.addEventListener('touchstart',function(e){x0=e.touches[0].clientX},{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(x0===null)return; var dx=e.changedTouches[0].clientX-x0;
+    if(Math.abs(dx)>60)go(dx<0?i+1:i-1); x0=null;
+  });
+  var s=parseInt((location.hash||'').slice(1),10);
+  go(isNaN(s)?0:s-1);
+})();
+</script>
+</body>
+</html>
